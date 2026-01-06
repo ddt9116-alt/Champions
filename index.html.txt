@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>نظام الدوري والكأس المطور</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #3b82f6; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --text-dim: #94a3b8; --border: #334155; --gold: #eab308; }
+        * { box-sizing: border-box; font-family: 'Tajawal', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg); color: var(--text); margin: 0; padding-bottom: 80px; min-height: 100vh; }
+
+        .app-header { background: var(--card); padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--border); }
+        .app-header h1 { font-size: 1.1rem; margin: 0; font-weight: 900; color: var(--primary); }
+
+        .container { padding: 15px; max-width: 500px; margin: auto; }
+        .card { background: var(--card); border-radius: 16px; padding: 18px; margin-bottom: 15px; border: 1px solid var(--border); }
+        .card h3 { margin: 0 0 15px 0; font-size: 0.9rem; color: var(--text-dim); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: right; color: var(--text-dim); font-size: 0.75rem; padding: 8px; }
+        td { padding: 12px 8px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        .pts-col { color: var(--primary); font-weight: 900; text-align: center; }
+
+        .match-card { display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); }
+        .team { width: 32%; text-align: center; font-weight: 700; font-size: 0.9rem; }
+        .score-box { display: flex; align-items: center; gap: 5px; }
+        .score-input { width: 38px; height: 38px; text-align: center; border: 1px solid var(--border); border-radius: 8px; background: #0f172a; color: white; font-weight: 900; }
+        .save-btn { background: var(--primary); color: white; border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; }
+
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: var(--card); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid var(--border); z-index: 1000; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-dim); font-size: 0.7rem; width: 33%; }
+        .nav-item.active { color: var(--primary); font-weight: 900; }
+        .nav-icon { font-size: 1.2rem; margin-bottom: 3px; }
+
+        .page { display: none; }
+        .page.active { display: block; }
+        .hidden { display: none !important; }
+
+        .banner { padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; font-weight: bold; border: 1px solid; }
+        .league-win { background: rgba(59, 130, 246, 0.1); border-color: var(--primary); color: var(--primary); }
+        .cup-win { background: rgba(234, 179, 8, 0.1); border-color: var(--gold); color: var(--gold); }
+        
+        .btn-next { background: var(--gold); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: 900; width: 100%; margin-top: 10px; }
+        .qualifier-tag { font-size: 0.7rem; background: #334155; padding: 2px 6px; border-radius: 4px; margin-right: 5px; color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div class="app-header">
+        <h1 id="headerTitle">الموسم 1</h1>
+        <div id="status-tag" style="font-size: 0.7rem; background: #064e3b; color: #34d399; padding: 4px 10px; border-radius: 20px;">نشط</div>
+    </div>
+
+    <div class="container">
+        <div id="page-league" class="page active">
+            <div class="card">
+                <h3>🏆 ترتيب الدوري</h3>
+                <table id="leagueTable">
+                    <thead><tr><th>الفريق</th><th>لعب</th><th>+/-</th><th style="text-align:center">نقاط</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <div id="leagueWinner" class="banner league-win hidden" style="margin-top:15px">
+                    بطل الدوري: <span id="l-name"></span> 🛡️
+                </div>
+            </div>
+
+            <div class="card" id="leagueMatchCard">
+                <h3>⚽ مباريات الذهاب والإياب</h3>
+                <div id="leagueMatches"></div>
+            </div>
+
+            <div id="cupSection" class="hidden">
+                <div class="card" style="border-top: 4px solid var(--gold);">
+                    <h3>🏆 تصفيات الكأس</h3>
+                    <div id="cupBracket">
+                        <div style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 10px;">
+                            ⚔️ الملحق (المركز 2 ضد 3)
+                        </div>
+                        <div id="semiMatchArea"></div>
+                        
+                        <div id="finalPart" class="hidden">
+                            <div style="font-size: 0.8rem; color: var(--text-dim); margin: 15px 0 10px;">
+                                🏁 النهائي (بطل الدوري ضد فائز الملحق)
+                            </div>
+                            <div id="finalMatchArea"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="cupWinner" class="banner cup-win hidden" style="margin-top:15px">
+                        بطل الكأس: <span id="c-name"></span> 👑
+                    </div>
+                </div>
+                <button id="nextSeasonBtn" class="btn-next hidden" onclick="startNewSeason()">إغلاق الموسم وبدء موسم جديد ➔</button>
+            </div>
+        </div>
+
+        <div id="page-trophies" class="page">
+            <div class="card"><h3>👑 خزانة البطولات التاريخية</h3><div id="hallOfFame"></div></div>
+        </div>
+
+        <div id="page-archive" class="page">
+            <div class="card"><h3>📂 أرشيف المواسم</h3><div id="archiveList"></div></div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="showPage('league', this)"><span class="nav-icon">🏟️</span><span>المنافسات</span></div>
+        <div class="nav-item" onclick="showPage('trophies', this)"><span class="nav-icon">👑</span><span>الأبطال</span></div>
+        <div class="nav-item" onclick="showPage('archive', this)"><span class="nav-icon">📂</span><span>الأرشيف</span></div>
+    </div>
+
+<script>
+    let state = {
+        history: {"أحمد": {l:0, c:0}, "مشعل": {l:0, c:0}, "فيصل": {l:0, c:0}},
+        seasons: { 1: createSeason(1) },
+        curId: 1, viewId: 1
+    };
+
+    function createSeason(id) {
+        return {
+            id, matches: [
+                {h: "أحمد", a: "مشعل", sh: null, sa: null}, {h: "مشعل", a: "فيصل", sh: null, sa: null},
+                {h: "فيصل", a: "أحمد", sh: null, sa: null}, {h: "مشعل", a: "أحمد", sh: null, sa: null},
+                {h: "فيصل", a: "مشعل", sh: null, sa: null}, {h: "أحمد", a: "فيصل", sh: null, sa: null}
+            ],
+            semi: {h: "", a: "", sh: null, sa: null},
+            final: {h: "", a: "", sh: null, sa: null},
+            leagueDone: false, cupDone: false,
+            leagueWinner: "", cupWinner: ""
+        };
+    }
+
+    function showPage(p, el) {
+        document.querySelectorAll('.page').forEach(pg => pg.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById('page-' + p).classList.add('active');
+        el.classList.add('active');
+        if(p === 'trophies') renderHall();
+        if(p === 'archive') renderArchive();
+    }
+
+    function renderHall() {
+        document.getElementById("hallOfFame").innerHTML = Object.entries(state.history).sort((a,b)=>(b[1].l+b[1].c)-(a[1].l+a[1].c)).map(([n, t]) => `
+            <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:12px; margin-bottom:10px; border:1px solid var(--border);">
+                <div style="font-weight:900; font-size:1.1rem; margin-bottom:8px;">${n}</div>
+                <div style="display:flex; gap:15px; font-size:0.85rem;">
+                    <span style="color:var(--primary)">🛡️ الدوري: ${t.l}</span>
+                    <span style="color:var(--gold)">👑 الكأس: ${t.c}</span>
+                </div>
+            </div>
+        `).join("");
+    }
+
+    function renderArchive() {
+        document.getElementById("archiveList").innerHTML = Object.keys(state.seasons).sort((a,b)=>b-a).map(sid => `
+            <div onclick="switchSeason(${sid})" style="padding:15px; background:${sid==state.viewId?'var(--primary)':'var(--card)'}; border-radius:12px; margin-bottom:8px; display:flex; justify-content:space-between; border:1px solid var(--border);">
+                <span>الموسم ${sid}</span>
+                <span style="font-size:0.7rem">${state.seasons[sid].cupDone ? '🏁 منتهي' : '⏳ نشط'}</span>
+            </div>
+        `).join("");
+    }
+
+    function switchSeason(sid) {
+        state.viewId = sid;
+        renderLeague();
+    }
+
+    function renderLeague() {
+        const s = state.seasons[state.viewId];
+        document.getElementById("headerTitle").innerText = `الموسم ${s.id}`;
+        
+        let stats = {"أحمد":{p:0,pts:0,gd:0},"مشعل":{p:0,pts:0,gd:0},"فيصل":{p:0,pts:0,gd:0}};
+        let played = 0;
+        s.matches.forEach(m => {
+            if(m.sh !== null) {
+                played++; stats[m.h].p++; stats[m.a].p++;
+                stats[m.h].gd += (m.sh-m.sa); stats[m.a].gd += (m.sa-m.sh);
+                if(m.sh > m.sa) stats[m.h].pts+=3; else if(m.sh < m.sa) stats[m.a].pts+=3; else {stats[m.h].pts++; stats[m.a].pts++;}
+            }
+        });
+
+        const sorted = ["أحمد","مشعل","فيصل"].sort((a,b) => stats[b].pts-stats[a].pts || stats[b].gd-stats[a].gd);
+        document.querySelector("#leagueTable tbody").innerHTML = sorted.map((p, i) => `
+            <tr>
+                <td><span class="qualifier-tag">${i==0?'نهائي':(i==3?'':'ملحق')}</span><b>${p}</b></td>
+                <td>${stats[p].p}</td>
+                <td>${stats[p].gd > 0 ? '+'+stats[p].gd : stats[p].gd}</td>
+                <td class="pts-col">${stats[p].pts}</td>
+            </tr>
+        `).join("");
+
+        document.getElementById("leagueMatches").innerHTML = s.matches.map((m,i)=>createMatchRow(m,i,'L',s.leagueDone)).join("");
+
+        if(played === 6) {
+            if(!s.leagueDone) {
+                s.leagueDone = true;
+                s.leagueWinner = sorted[0];
+                state.history[s.leagueWinner].l++;
+            }
+            document.getElementById("leagueWinner").classList.remove("hidden");
+            document.getElementById("l-name").innerText = s.leagueWinner;
+            document.getElementById("cupSection").classList.remove("hidden");
+
+            // إعداد الكأس: المركز 2 ضد المركز 3
+            if(!s.semi.h) { s.semi.h = sorted[1]; s.semi.a = sorted[2]; }
+            document.getElementById("semiMatchArea").innerHTML = createMatchRow(s.semi,0,'S',s.cupDone);
+
+            if(s.semi.sh !== null) {
+                document.getElementById("finalPart").classList.remove("hidden");
+                const semiWinner = s.semi.sh > s.semi.sa ? s.semi.h : s.semi.a;
+                
+                // النهائي: بطل الدوري ضد فائز الملحق
+                if(!s.final.h) { s.final.h = s.leagueWinner; s.final.a = semiWinner; }
+                document.getElementById("finalMatchArea").innerHTML = createMatchRow(s.final,0,'F',s.cupDone);
+                
+                if(s.cupDone) {
+                    document.getElementById("cupWinner").classList.remove("hidden");
+                    document.getElementById("c-name").innerText = s.cupWinner;
+                    if(state.viewId == state.curId) document.getElementById("nextSeasonBtn").classList.remove("hidden");
+                }
+            }
+        } else {
+            document.getElementById("leagueWinner").classList.add("hidden");
+            document.getElementById("cupSection").classList.add("hidden");
+            document.getElementById("finalPart").classList.add("hidden");
+        }
+    }
+
+    function createMatchRow(m, i, type, dis) {
+        return `
+            <div class="match-card">
+                <span class="team">${m.h}</span>
+                <div class="score-box">
+                    <input type="number" id="${type}h${i}" class="score-input" value="${m.sh??''}" ${dis?'disabled':''}>
+                    <span style="color:var(--text-dim)">:</span>
+                    <input type="number" id="${type}a${i}" class="score-input" value="${m.sa??''}" ${dis?'disabled':''}>
+                </div>
+                <span class="team">${m.a}</span>
+                ${!dis ? `<button class="save-btn" onclick="save('${type}',${i})">✓</button>` : ''}
+            </div>
+        `;
+    }
+
+    function save(type, i) {
+        const s = state.seasons[state.viewId];
+        const h = document.getElementById(type+'h'+i).value;
+        const a = document.getElementById(type+'a'+i).value;
+        if(h==="" || a==="") return;
+        if(h === a && type !== 'L') { alert("يجب وجود فائز في مباريات الكأس!"); return; }
+
+        if(type==='L') { s.matches[i].sh=parseInt(h); s.matches[i].sa=parseInt(a); }
+        else if(type==='S') { s.semi.sh=parseInt(h); s.semi.sa=parseInt(a); }
+        else if(type==='F') { 
+            s.final.sh=parseInt(h); s.final.sa=parseInt(a); 
+            s.cupWinner = s.final.sh > s.final.sa ? s.final.h : s.final.a;
+            s.cupDone = true; state.history[s.cupWinner].c++;
+        }
+        renderLeague();
+    }
+
+    function startNewSeason() {
+        state.curId++;
+        state.seasons[state.curId] = createSeason(state.curId);
+        state.viewId = state.curId;
+        renderLeague();
+        document.getElementById("nextSeasonBtn").classList.add("hidden");
+    }
+
+    renderLeague();
+</script>
+</body>
+</html>
