@@ -25,7 +25,7 @@ body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: 
 .is-confirmed .confirm-btn { display: none; }
 .confirmed-label { display: none; text-align: center; color: var(--success); margin-top: 10px; font-size: 0.8rem; font-weight: bold; }
 .is-confirmed .confirmed-label { display: block; }
-.match-date { font-size: 0.65rem; color: var(--text-dim); margin-top: 4px; font-weight: normal; }
+.match-date { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; font-weight: normal; direction: ltr; }
 .btn-new { width: 100%; padding: 16px; background: linear-gradient(to right, #2563eb, #3b82f6); color: white; border: none; border-radius: 15px; font-weight: 800; cursor: pointer; margin-top: 10px; }
 .btn-new:disabled { opacity: 0.1; }
 input:disabled { opacity: 1; -webkit-text-fill-color: var(--success); }
@@ -134,13 +134,10 @@ const s2 = parseInt(document.getElementById(`s2-${rIdx}-${mIdx}`).value);
 if (isNaN(s1) || isNaN(s2)) return alert("سجل الأهداف أولاً!");
 if (prompt("أدخل كلمة السر:") !== SECRET_KEY) return alert("كلمة سر خاطئة!");
 
-// إنشاء التاريخ مع السنة والوقت
 const now = new Date();
-const timestamp = now.toLocaleDateString('ar-EG', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-}) + ' | ' + now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+const datePart = now.getFullYear() + '/' + (now.getMonth() + 1) + '/' + now.getDate();
+const timePart = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+const timestamp = datePart + ' | ' + timePart;
 
 db.ref(`league/${rIdx}/${mIdx}`).update({ s1, s2, confirmed: true, date: timestamp });
 }
