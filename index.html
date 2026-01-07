@@ -18,7 +18,8 @@
         .rank-1 { color: #fbbf24; background: rgba(251, 191, 36, 0.1); border-radius: 10px; }
         .match-card { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 15px; margin-bottom: 12px; }
         .match-row { display: grid; grid-template-columns: 1fr 45px 15px 45px 1fr; align-items: center; gap: 10px; }
-        .score-in { width: 45px; height: 40px; background: #0f172a; border: 2px solid var(--border); border-radius: 10px; color: white; text-align: center; font-size: 1.2rem; font-weight: bold; }
+        .score-box { background: #0f172a; border: 2px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; height: 45px; }
+        .score-in { width: 100%; background: transparent; border: none; color: white; text-align: center; font-size: 1.2rem; font-weight: bold; outline: none; }
         .confirm-btn { width: 100%; margin-top: 12px; padding: 12px; border: none; border-radius: 10px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; }
         .is-confirmed { border-color: var(--success); background: rgba(16, 185, 129, 0.05); }
         .is-confirmed .confirm-btn { display: none; }
@@ -32,7 +33,7 @@
 <body>
 
 <div class="container">
-    <h2 style="text-align: center; color: var(--primary);">🏆 دوري الأساطير مباشر</h2>
+    <h2 style="text-align: center; color: var(--primary);">🏆 دوري الأساطير</h2>
     
     <div class="standings-container">
         <table class="standings-table">
@@ -53,7 +54,6 @@
 </div>
 
 <script>
-    // إعدادات Firebase الخاصة بك
     const firebaseConfig = {
         apiKey: "AIzaSyA_s2HoKKxwXELNHEmti_RsvA_nP6fmWP8",
         authDomain: "nhffbjhh.firebaseapp.com",
@@ -69,7 +69,6 @@
     const players = ["أحمد", "مشعل", "فيصل"];
     const SECRET_KEY = "ddt";
 
-    // الاستماع للتغييرات في قاعدة البيانات فوراً
     db.ref('league').on('value', (snapshot) => {
         const data = snapshot.val() || [];
         renderAll(data);
@@ -78,13 +77,11 @@
     function renderAll(roundsData) {
         let stats = {};
         players.forEach(p => stats[p] = { played: 0, gf: 0, ga: 0, pts: 0 });
-        
         const container = document.getElementById('rounds-list');
         container.innerHTML = '';
 
         roundsData.forEach((round, rIdx) => {
             let roundHTML = `<div style="margin-bottom:10px; font-weight:bold; color:var(--text-dim); border-right:3px solid var(--primary); padding-right:8px;">الجولة ${rIdx + 1}</div>`;
-            
             round.forEach((m, mIdx) => {
                 if (m.confirmed) {
                     stats[m.p1].played++; stats[m.p2].played++;
@@ -94,14 +91,13 @@
                     else if (m.s2 > m.s1) stats[m.p2].pts += 3;
                     else { stats[m.p1].pts += 1; stats[m.p2].pts += 1; }
                 }
-
                 roundHTML += `
                     <div class="match-card ${m.confirmed ? 'is-confirmed' : ''}">
                         <div class="match-row">
                             <span class="team-name" style="text-align:left">${m.p1}</span>
-                            <input type="number" class="score-in" id="s1-${rIdx}-${mIdx}" value="${m.s1??''}" ${m.confirmed?'disabled':''}>
+                            <div class="score-box"><input type="number" class="score-in" id="s1-${rIdx}-${mIdx}" value="${m.s1??''}" ${m.confirmed?'disabled':''}></div>
                             <span style="color:var(--text-dim)">-</span>
-                            <input type="number" class="score-in" id="s2-${rIdx}-${mIdx}" value="${m.s2??''}" ${m.confirmed?'disabled':''}>
+                            <div class="score-box"><input type="number" class="score-in" id="s2-${rIdx}-${mIdx}" value="${m.s2??''}" ${m.confirmed?'disabled':''}></div>
                             <span class="team-name" style="text-align:right">${m.p2}</span>
                         </div>
                         <button class="confirm-btn" onclick="confirmMatch(${rIdx}, ${mIdx})">اعتماد النتيجة</button>
@@ -110,9 +106,7 @@
             });
             container.innerHTML += `<div class="round-box">${roundHTML}</div>`;
         });
-
         updateStandingsUI(stats);
-        
         const isLastRoundComplete = roundsData.length === 0 || roundsData[roundsData.length-1].every(m => m.confirmed);
         document.getElementById('add-round-btn').disabled = !isLastRoundComplete;
     }
@@ -133,9 +127,10 @@
     function confirmMatch(rIdx, mIdx) {
         const s1 = parseInt(document.getElementById(`s1-${rIdx}-${mIdx}`).value);
         const s2 = parseInt(document.getElementById(`s2-${rIdx}-${mIdx}`).value);
-        
         if (isNaN(s1) || isNaN(s2)) return alert("سجل الأهداف أولاً!");
-        if (prompt("أدخل كلمة السر ddt:") !== SECRET_KEY) return alert("خطأ!");
+        
+        // مسح ddt من السؤال
+        if (prompt("أدخل كلمة السر:") !== SECRET_KEY) return alert("كلمة سر خاطئة!");
 
         db.ref(`league/${rIdx}/${mIdx}`).update({ s1, s2, confirmed: true });
     }
