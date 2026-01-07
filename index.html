@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دوري الأساطير</title>
+    <title>دوري الأساطير - بداية جديدة</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
     <style>
-        :root { --bg: #0f172a; --card-bg: #1e293b; --primary: #3b82f6; --success: #10b981; --text-main: #f8fafc; --text-dim: #94a3b8; --border: #334155; }
+        :root { --bg: #0f172a; --card-bg: #1e293b; --primary: #3b82f6; --success: #10b981; --text-main: #f8fafc; --text-dim: #94a3b8; --border: #334155; --danger: #ef4444; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text-main); padding: 15px; margin: 0; }
         .container { max-width: 450px; margin: auto; }
         .standings-container { background: var(--card-bg); border-radius: 20px; padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); margin-bottom: 30px; border: 1px solid var(--border); }
@@ -27,6 +27,7 @@
         .is-confirmed .confirmed-label { display: block; }
         .btn-new { width: 100%; padding: 16px; background: linear-gradient(to right, #2563eb, #3b82f6); color: white; border: none; border-radius: 15px; font-weight: 800; cursor: pointer; margin-top: 10px; }
         .btn-new:disabled { opacity: 0.1; }
+        .reset-link { display: block; text-align: center; margin-top: 40px; color: var(--text-dim); font-size: 0.7rem; cursor: pointer; text-decoration: underline; }
         input:disabled { opacity: 1; -webkit-text-fill-color: var(--success); }
     </style>
 </head>
@@ -51,6 +52,8 @@
 
     <div id="rounds-list"></div>
     <button id="add-round-btn" class="btn-new" onclick="addNewRound()">+ افتح جولة جديدة</button>
+    
+    <div class="reset-link" onclick="resetEntireLeague()">إعادة ضبط الدوري بالكامل (بداية جديدة)</div>
 </div>
 
 <script>
@@ -89,7 +92,7 @@
                     stats[m.p2].gf += m.s2; stats[m.p2].ga += m.s1;
                     if (m.s1 > m.s2) stats[m.p1].pts += 3;
                     else if (m.s2 > m.s1) stats[m.p2].pts += 3;
-                    else { stats[m.p1].pts += 1; stats[p2].pts += 1; }
+                    else { stats[m.p1].pts += 1; stats[m.p2].pts += 1; }
                 }
                 roundHTML += `
                     <div class="match-card ${m.confirmed ? 'is-confirmed' : ''}">
@@ -143,6 +146,15 @@
             data.push(newRound);
             db.ref('league').set(data);
         });
+    }
+
+    function resetEntireLeague() {
+        if (prompt("هذا سيحذف كل النتائج! أدخل كلمة السر للتأكيد:") === SECRET_KEY) {
+            db.ref('league').set([]); // مسح المصفوفة تماماً
+            alert("تم تصفير الدوري بنجاح. ابدأوا الجولة الأولى!");
+        } else {
+            alert("فشل التحقق.");
+        }
     }
 </script>
 </body>
