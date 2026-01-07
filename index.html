@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دوري الأساطير - نظام الأوسمة</title>
+    <title>دوري الأساطير - المطور</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
@@ -38,7 +38,7 @@
         .streak-fire { font-size: 0.7rem; color: #ff4500; font-weight: normal; margin-top: 2px; }
 
         .h2h-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-        .h2h-score { background: #0f172a; padding: 4px 12px; border-radius: 20px; color: var(--primary); font-weight: 800; border: 1px solid var(--border); }
+        .h2h-score { background: #0f172a; padding: 4px 12px; border-radius: 20px; color: var(--primary); font-weight: 800; border: 1px solid var(--border); min-width: 45px; text-align: center; }
 
         .round-title { margin: 20px 0 10px; font-weight: bold; color: var(--primary); font-size: 0.9rem; }
         .match-card { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 15px; margin-bottom: 10px; }
@@ -47,7 +47,6 @@
         .score-in { width: 100%; height: 100%; background: transparent; border: none; color: white; text-align: center; font-size: 1.1rem; font-weight: bold; outline: none; }
         
         .confirm-btn { width: 100%; margin-top: 10px; padding: 10px; border: none; border-radius: 10px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; }
-        .is-confirmed { border-color: var(--success); }
         .is-confirmed .confirm-btn { display: none; }
         .confirmed-badge { display: none; text-align: center; color: var(--success); margin-top: 5px; font-size: 0.75rem; font-weight: bold; }
         .is-confirmed .confirmed-badge { display: block; }
@@ -162,6 +161,24 @@
         document.getElementById('add-round-btn').disabled = !isLastRoundComplete;
     }
 
+    function updateTopWinsUI(topMatches) {
+        const container = document.getElementById('top-wins-container');
+        container.innerHTML = topMatches.length === 0 ? '<div style="text-align:center; color:var(--text-dim); font-size:0.8rem;">لا توجد نتائج مسجلة</div>' : '';
+        
+        topMatches.forEach((m, i) => {
+            const isP1Winner = m.s1 > m.s2;
+            const isP2Winner = m.s2 > m.s1;
+
+            container.innerHTML += `
+                <div class="h2h-row">
+                    <span style="color:var(--gold); font-size:0.7rem; width:25px;">#${i+1}</span>
+                    <span style="flex:1; text-align:right; ${isP1Winner ? 'color:var(--success)' : ''}">${m.p1}</span>
+                    <div class="h2h-score" style="background:var(--bg); border:none; margin: 0 10px;">${m.s1} - ${m.s2}</div>
+                    <span style="flex:1; text-align:left; ${isP2Winner ? 'color:var(--success)' : ''}">${m.p2}</span>
+                </div>`;
+        });
+    }
+
     function applyWin(stats, winner, loser) {
         stats[winner].pts += 3;
         stats[winner].currentStreak++;
@@ -171,15 +188,6 @@
         else if (s === 10) stats[winner].stars.silver++;
         else if (s === 15) stats[winner].stars.gold++;
         else if (s === 20) { stats[winner].stars.legendary++; stats[winner].currentStreak = 0; }
-    }
-
-    function updateTopWinsUI(topMatches) {
-        const container = document.getElementById('top-wins-container');
-        container.innerHTML = topMatches.length === 0 ? '<div style="text-align:center; color:var(--text-dim); font-size:0.8rem;">لا توجد نتائج مسجلة</div>' : '';
-        topMatches.forEach((m, i) => {
-            const winner = m.s1 > m.s2 ? m.p1 : m.p2;
-            container.innerHTML += `<div class="h2h-row"><span style="color:var(--gold); font-size:0.7rem;">#${i+1}</span><span style="${m.p1===winner?'color:var(--success)':''}">${m.p1}</span><div class="h2h-score" style="background:var(--bg); border:none;">${m.s1}-${m.s2}</div><span style="${m.p2===winner?'color:var(--success)':''}">${m.p2}</span></div>`;
-        });
     }
 
     function updateStandingsUI(stats) {
