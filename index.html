@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دوري الأساطير - إحصائيات المواجهات</title>
+    <title>دوري الأساطير - نظام الأوسمة</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
@@ -17,7 +17,6 @@
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--bg); color: var(--text-main); padding: 15px; margin: 0; }
         .container { max-width: 450px; margin: auto; }
 
-        /* الجداول */
         .section-card { 
             background: var(--card-bg); border-radius: 20px; padding: 18px; 
             box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-bottom: 25px; border: 1px solid var(--border); 
@@ -27,23 +26,28 @@
 
         .standings-table { width: 100%; border-collapse: collapse; text-align: center; }
         .standings-table th { color: var(--text-dim); font-size: 0.75rem; padding-bottom: 10px; }
-        .standings-table td { padding: 10px 5px; font-weight: bold; }
-        .rank-1 { color: var(--gold); background: rgba(251, 191, 36, 0.05); border-radius: 10px; }
+        .standings-table td { padding: 12px 5px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .rank-1 { color: var(--gold); background: rgba(251, 191, 36, 0.05); }
+
+        /* الأوسمة والنجوم */
+        .stars-container { display: inline-flex; gap: 8px; vertical-align: middle; margin-right: 10px; }
+        .star-badge { position: relative; display: flex; align-items: center; font-size: 1.1rem; }
+        .star-count { 
+            position: absolute; top: -7px; right: -9px; background: var(--danger); color: white; 
+            font-size: 0.6rem; padding: 1px 4px; border-radius: 8px; border: 1px solid var(--card-bg);
+        }
+        .streak-fire { font-size: 0.7rem; color: #ff4500; font-weight: normal; margin-top: 2px; }
 
         /* سجل المواجهات */
-        .h2h-row { 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.9rem;
-        }
-        .h2h-row:last-child { border-bottom: none; }
+        .h2h-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
         .h2h-score { background: #0f172a; padding: 4px 12px; border-radius: 20px; color: var(--primary); font-weight: 800; border: 1px solid var(--border); }
 
         /* المباريات */
         .round-title { margin: 20px 0 10px; font-weight: bold; color: var(--primary); font-size: 0.9rem; }
         .match-card { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 15px; margin-bottom: 10px; }
         .match-row { display: grid; grid-template-columns: 1fr 45px 15px 45px 1fr; align-items: center; gap: 8px; }
-        .score-box { background: #0f172a; border: 1px solid var(--border); border-radius: 10px; height: 40px; display: flex; }
-        .score-in { width: 100%; background: transparent; border: none; color: white; text-align: center; font-size: 1.1rem; font-weight: bold; outline: none; }
+        .score-box { background: #0f172a; border: 1px solid var(--border); border-radius: 10px; height: 40px; }
+        .score-in { width: 100%; height: 100%; background: transparent; border: none; color: white; text-align: center; font-size: 1.1rem; font-weight: bold; outline: none; }
         
         .confirm-btn { width: 100%; margin-top: 10px; padding: 10px; border: none; border-radius: 10px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; }
         .is-confirmed { border-color: var(--success); }
@@ -61,7 +65,7 @@
     <h2 style="text-align: center; color: var(--primary);">ناديك يناديك ⚽</h2>
 
     <div class="section-card">
-        <h3>الترتيب العام</h3>
+        <h3>الترتيب العام والأوسمة</h3>
         <table class="standings-table">
             <thead>
                 <tr>
@@ -76,9 +80,8 @@
     </div>
 
     <div class="section-card">
-        <h3>سجل المواجهات المباشرة (عدد مرات الفوز)</h3>
-        <div id="h2h-container">
-            </div>
+        <h3>سجل المواجهات المباشرة</h3>
+        <div id="h2h-container"></div>
     </div>
 
     <div id="rounds-list"></div>
@@ -108,15 +111,16 @@
 
     function renderAll(roundsData) {
         let stats = {};
-        // تهيئة إحصائيات المواجهات المباشرة
-        let h2h = {
-            "أحمد_مشعل": { p1: 0, p2: 0 },
-            "أحمد_فيصل": { p1: 0, p2: 0 },
-            "مشعل_فيصل": { p1: 0, p2: 0 }
-        };
+        players.forEach(p => {
+            stats[p] = { 
+                played: 0, gf: 0, ga: 0, pts: 0, 
+                currentStreak: 0,
+                stars: { bronze: 0, silver: 0, gold: 0, legendary: 0 }
+            };
+        });
 
-        players.forEach(p => stats[p] = { played: 0, gf: 0, ga: 0, pts: 0 });
-        
+        let h2h = { "أحمد_مشعل": { p1: 0, p2: 0 }, "أحمد_فيصل": { p1: 0, p2: 0 }, "مشعل_فيصل": { p1: 0, p2: 0 } };
+
         const container = document.getElementById('rounds-list');
         container.innerHTML = '';
 
@@ -124,22 +128,24 @@
             let roundHTML = `<div class="round-title">الجولة ${rIdx + 1}</div>`;
             round.forEach((m, mIdx) => {
                 if (m.confirmed) {
-                    // الترتيب العام
                     stats[m.p1].played++; stats[m.p2].played++;
                     stats[m.p1].gf += m.s1; stats[m.p1].ga += m.s2;
                     stats[m.p2].gf += m.s2; stats[m.p2].ga += m.s1;
-                    if (m.s1 > m.s2) stats[m.p1].pts += 3;
-                    else if (m.s2 > m.s1) stats[m.p2].pts += 3;
-                    else { stats[m.p1].pts += 1; stats[m.p2].pts += 1; }
 
-                    // حساب المواجهات المباشرة
+                    // منطق السلاسل والأوسمة
+                    if (m.s1 > m.s2) {
+                        applyWin(stats, m.p1, m.p2);
+                    } else if (m.s2 > m.s1) {
+                        applyWin(stats, m.p2, m.p1);
+                    } else {
+                        stats[m.p1].pts += 1; stats[m.p2].pts += 1;
+                        stats[m.p1].currentStreak = 0; stats[m.p2].currentStreak = 0;
+                    }
+
                     const key = getH2HKey(m.p1, m.p2);
                     if (key) {
-                        if (m.s1 > m.s2) {
-                            m.p1 === key.split('_')[0] ? h2h[key].p1++ : h2h[key].p2++;
-                        } else if (m.s2 > m.s1) {
-                            m.p2 === key.split('_')[1] ? h2h[key].p2++ : h2h[key].p1++;
-                        }
+                        if (m.s1 > m.s2) m.p1 === key.split('_')[0] ? h2h[key].p1++ : h2h[key].p2++;
+                        else if (m.s2 > m.s1) m.p2 === key.split('_')[1] ? h2h[key].p2++ : h2h[key].p1++;
                     }
                 }
                 roundHTML += generateMatchHTML(m, rIdx, mIdx);
@@ -154,6 +160,50 @@
         document.getElementById('add-round-btn').disabled = !isLastRoundComplete;
     }
 
+    function applyWin(stats, winner, loser) {
+        stats[winner].pts += 3;
+        stats[winner].currentStreak++;
+        stats[loser].currentStreak = 0;
+
+        let s = stats[winner].currentStreak;
+        if (s === 5) stats[winner].stars.bronze++;
+        else if (s === 10) stats[winner].stars.silver++;
+        else if (s === 15) stats[winner].stars.gold++;
+        else if (s === 20) {
+            stats[winner].stars.legendary++;
+            stats[winner].currentStreak = 0; // إعادة التصفير بعد الأسطورية
+        }
+    }
+
+    function getStarsHTML(stars) {
+        let html = '<div class="stars-container">';
+        if (stars.legendary > 0) html += `<span class="star-badge">💎<span class="star-count">${stars.legendary}</span></span>`;
+        if (stars.gold > 0) html += `<span class="star-badge">⭐<span class="star-count">${stars.gold}</span></span>`;
+        if (stars.silver > 0) html += `<span class="star-badge">🥈<span class="star-count">${stars.silver}</span></span>`;
+        if (stars.bronze > 0) html += `<span class="star-badge">🥉<span class="star-count">${stars.bronze}</span></span>`;
+        html += '</div>';
+        return html;
+    }
+
+    function updateStandingsUI(stats) {
+        const sorted = Object.keys(stats).map(name => ({ name, ...stats[name] }))
+            .sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga));
+        const tbody = document.getElementById('standings-body');
+        tbody.innerHTML = '';
+        sorted.forEach((p, i) => {
+            tbody.innerHTML += `<tr class="${i===0?'rank-1':''}">
+                <td style="text-align:right; padding-right:15px;">
+                    <div style="display:flex; align-items:center;">
+                        <span>${p.name}</span>
+                        ${getStarsHTML(p.stars)}
+                    </div>
+                    <div class="streak-fire">${p.currentStreak > 0 ? '🔥 سلسلة فوز: ' + p.currentStreak : ''}</div>
+                </td>
+                <td>${p.played}</td><td>${p.gf - p.ga}</td><td style="color:var(--primary)">${p.pts}</td>
+            </tr>`;
+        });
+    }
+
     function getH2HKey(p1, p2) {
         if ((p1 === "أحمد" && p2 === "مشعل") || (p1 === "مشعل" && p2 === "أحمد")) return "أحمد_مشعل";
         if ((p1 === "أحمد" && p2 === "فيصل") || (p1 === "فيصل" && p2 === "أحمد")) return "أحمد_فيصل";
@@ -166,12 +216,7 @@
         container.innerHTML = '';
         for (const key in h2h) {
             const [p1, p2] = key.split('_');
-            container.innerHTML += `
-                <div class="h2h-row">
-                    <span>${p1}</span>
-                    <div class="h2h-score">${h2h[key].p1} - ${h2h[key].p2}</div>
-                    <span>${p2}</span>
-                </div>`;
+            container.innerHTML += `<div class="h2h-row"><span>${p1}</span><div class="h2h-score">${h2h[key].p1} - ${h2h[key].p2}</div><span>${p2}</span></div>`;
         }
     }
 
@@ -185,22 +230,9 @@
                     <div class="score-box"><input type="number" class="score-in" id="s2-${rIdx}-${mIdx}" value="${m.s2??''}" ${m.confirmed?'disabled':''}></div>
                     <span style="text-align:right">${m.p2}</span>
                 </div>
-                <button class="confirm-btn" onclick="confirmMatch(${rIdx}, ${mIdx})">اعتماد</button>
+                <button class="confirm-btn" onclick="confirmMatch(${rIdx}, ${mIdx})">اعتماد النتيجة</button>
                 <div class="confirmed-badge">✓ تم الاعتماد (${m.date || ''})</div>
             </div>`;
-    }
-
-    function updateStandingsUI(stats) {
-        const sorted = Object.keys(stats).map(name => ({ name, ...stats[name] }))
-            .sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga));
-        const tbody = document.getElementById('standings-body');
-        tbody.innerHTML = '';
-        sorted.forEach((p, i) => {
-            tbody.innerHTML += `<tr class="${i===0?'rank-1':''}">
-                <td style="text-align:right; padding-right:15px;">${p.name}</td>
-                <td>${p.played}</td><td>${p.gf - p.ga}</td><td style="color:var(--primary)">${p.pts}</td>
-            </tr>`;
-        });
     }
 
     function confirmMatch(rIdx, mIdx) {
