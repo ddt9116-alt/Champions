@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دوري الأساطير المباشر</title>
+    <title>دوري الأساطير</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
@@ -89,7 +89,7 @@
                     stats[m.p2].gf += m.s2; stats[m.p2].ga += m.s1;
                     if (m.s1 > m.s2) stats[m.p1].pts += 3;
                     else if (m.s2 > m.s1) stats[m.p2].pts += 3;
-                    else { stats[m.p1].pts += 1; stats[m.p2].pts += 1; }
+                    else { stats[m.p1].pts += 1; stats[p2].pts += 1; }
                 }
                 roundHTML += `
                     <div class="match-card ${m.confirmed ? 'is-confirmed' : ''}">
@@ -128,10 +128,7 @@
         const s1 = parseInt(document.getElementById(`s1-${rIdx}-${mIdx}`).value);
         const s2 = parseInt(document.getElementById(`s2-${rIdx}-${mIdx}`).value);
         if (isNaN(s1) || isNaN(s2)) return alert("سجل الأهداف أولاً!");
-        
-        // مسح ddt من السؤال
         if (prompt("أدخل كلمة السر:") !== SECRET_KEY) return alert("كلمة سر خاطئة!");
-
         db.ref(`league/${rIdx}/${mIdx}`).update({ s1, s2, confirmed: true });
     }
 
