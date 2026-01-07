@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دوري الأساطير - بداية جديدة</title>
+    <title>دوري الأساطير - إدارة النتائج</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
@@ -27,7 +27,6 @@
         .is-confirmed .confirmed-label { display: block; }
         .btn-new { width: 100%; padding: 16px; background: linear-gradient(to right, #2563eb, #3b82f6); color: white; border: none; border-radius: 15px; font-weight: 800; cursor: pointer; margin-top: 10px; }
         .btn-new:disabled { opacity: 0.1; }
-        .reset-link { display: block; text-align: center; margin-top: 40px; color: var(--text-dim); font-size: 0.7rem; cursor: pointer; text-decoration: underline; }
         input:disabled { opacity: 1; -webkit-text-fill-color: var(--success); }
     </style>
 </head>
@@ -52,8 +51,6 @@
 
     <div id="rounds-list"></div>
     <button id="add-round-btn" class="btn-new" onclick="addNewRound()">+ افتح جولة جديدة</button>
-    
-    <div class="reset-link" onclick="resetEntireLeague()">إعادة ضبط الدوري بالكامل (بداية جديدة)</div>
 </div>
 
 <script>
@@ -146,15 +143,6 @@
             data.push(newRound);
             db.ref('league').set(data);
         });
-    }
-
-    function resetEntireLeague() {
-        if (prompt("هذا سيحذف كل النتائج! أدخل كلمة السر للتأكيد:") === SECRET_KEY) {
-            db.ref('league').set([]); // مسح المصفوفة تماماً
-            alert("تم تصفير الدوري بنجاح. ابدأوا الجولة الأولى!");
-        } else {
-            alert("فشل التحقق.");
-        }
     }
 </script>
 </body>
