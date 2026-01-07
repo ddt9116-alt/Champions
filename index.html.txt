@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>دوري الثلاثة - مباشر</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #3b82f6; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; }
+        body { background-color: var(--bg); color: var(--text); font-family: 'Tajawal', sans-serif; margin: 0; padding: 15px; }
+        .card { background: var(--card); border-radius: 16px; padding: 18px; margin-bottom: 15px; border: 1px solid #334155; }
+        .match-row { display: flex; align-items: center; justify-content: space-between; background: #0f172a; padding: 10px; border-radius: 12px; margin-bottom: 8px; }
+        .score-input { width: 45px; height: 45px; text-align: center; background: #1e293b; color: white; border: 2px solid #3b82f6; border-radius: 8px; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; text-align: center; }
+        th, td { padding: 10px; border-bottom: 1px solid #334155; }
+    </style>
+</head>
+<body>
+
+    <h2 style="text-align:center; color: var(--primary);">🏆 دوري الثلاثة - المباشر</h2>
+    <div id="loading" style="text-align:center; padding: 20px;">جاري الاتصال بالسحابة... 🔄</div>
+
+    <div id="main-content" style="display:none;">
+        <div class="card">
+            <h3>📊 الترتيب</h3>
+            <table id="leagueTable">
+                <thead><tr><th>الفريق</th><th>لعب</th><th>+/-</th><th>نقاط</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="card">
+            <h3>⚽ النتائج</h3>
+            <div id="matchesArea"></div>
+        </div>
+    </div>
+
+<script>
+    // بياناتك الخاصة التي أرسلتها (معدلة لتعمل في المتصفح)
+    const firebaseConfig = {
+        apiKey: "AIzaSyA_s2HoKKxwXELNHEmti_RsvA_nP6fmWP8",
+        authDomain: "nhffbjhh.firebaseapp.com",
+        databaseURL: "https://nhffbjhh-default-rtdb.firebaseio.com",
+        projectId: "nhffbjhh",
+        storageBucket: "nhffbjhh.firebasestorage.app",
+        messagingSenderId: "779073349880",
+        appId: "1:779073349880:web:9cd7adb0ed3c628546b30d"
+    };
+
+    // تهيئة Firebase
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.database().ref('league_data');
+
+    // الاستماع للتغييرات (مباشر)
+    db.on('value', (snapshot) => {
+        const data = snapshot.val() || {
+            matches: [
+                {h: "أحمد", a: "مشعل", sh: "", sa: ""}, {h: "مشعل", a: "فيصل", sh: "", sa: ""},
+                {h: "فيصل", a: "أحمد", sh: "", sa: ""}, {h: "مشعل", a: "أحمد", sh: "", sa: ""},
+                {h: "فيصل", a: "مشعل", sh: "", sa: ""}, {h: "أحمد", a: "فيصل", sh: "", sa: ""}
+            ]
+        };
+        updateUI(data);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('main-content').style.display = 'block';
+    });
+
+    function updateUI(data) {
+        let stats = {"أحمد":{p:0,pts:0,gd:0}, "مشعل":{p:0,pts:0,gd:0}, "فيصل":{p:0,pts:0,gd:0}};
+        let html = "";
+        
+        data.matches.forEach((m, i) => {
+            if(m.sh !== "" && m.sa !== "") {
+                const hS = parseInt(m.sh), aS = parseInt(m.sa);
+                stats[m.h].p++; stats[m.a].p++;
+                stats[m.h].gd += (hS - aS); stats[m.a].gd += (aS - hS);
+                if(hS > aS) stats[m.h].pts += 3; else if(aS > hS) stats[m.a].pts += 3; else {stats[m.h].pts++; stats[m.a].pts++;}
+            }
+            html += `<div class="match-row">
+                <span>${m.h}</span>
+                <input type="number" value="${m.sh}" onchange="save(${i}, 'sh', this.value)" class="score-input">
+                <span>:</span>
+                <input type="number" value="${m.sa}" onchange="save(${i}, 'sa', this.value)" class="score-input">
+                <span>${m.a}</span>
+            </div>`;
+        });
+        document.getElementById('matchesArea').innerHTML = html;
+
+        const sorted = ["أحمد", "مشعل", "فيصل"].sort((a,b) => stats[b].pts - stats[a].pts || stats[b].gd - stats[a].gd);
+        document.querySelector("#leagueTable tbody").innerHTML = sorted.map(name => `
+            <tr><td>${name}</td><td>${stats[name].p}</td><td>${stats[name].gd}</td><td style="color:#3b82f6">${stats[name].pts}</td></tr>
+        `).join("");
+    }
+
+    function save(idx, side, val) {
+        db.child('matches').child(idx).update({ [side]: val });
+    }
+</script>
+</body>
+</html>
