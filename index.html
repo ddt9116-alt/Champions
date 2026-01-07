@@ -23,8 +23,14 @@
         .confirm-btn { width: 100%; margin-top: 12px; padding: 12px; border: none; border-radius: 10px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; }
         .is-confirmed { border-color: var(--success); background: rgba(16, 185, 129, 0.05); }
         .is-confirmed .confirm-btn { display: none; }
-        .confirmed-label { display: none; text-align: center; color: var(--success); margin-top: 10px; font-size: 0.8rem; font-weight: bold; }
+        
+        /* تنسيق الوقت المضاف */
+        .time-label { font-size: 0.65rem; color: var(--text-dim); margin-top: 8px; text-align: center; display: none; }
+        .is-confirmed .time-label { display: block; }
+        
+        .confirmed-label { display: none; text-align: center; color: var(--success); margin-top: 5px; font-size: 0.8rem; font-weight: bold; }
         .is-confirmed .confirmed-label { display: block; }
+        
         .btn-new { width: 100%; padding: 16px; background: linear-gradient(to right, #2563eb, #3b82f6); color: white; border: none; border-radius: 15px; font-weight: 800; cursor: pointer; margin-top: 10px; }
         .btn-new:disabled { opacity: 0.1; }
         input:disabled { opacity: 1; -webkit-text-fill-color: var(--success); }
@@ -33,7 +39,7 @@
 <body>
 
 <div class="container">
-    <h2 style="text-align: center; color: var(--primary);">ناديك يناديك</h2>
+    <h2 style="text-align: center; color: var(--primary);">🏆 دوري الأساطير</h2>
     
     <div class="standings-container">
         <table class="standings-table">
@@ -102,6 +108,7 @@
                         </div>
                         <button class="confirm-btn" onclick="confirmMatch(${rIdx}, ${mIdx})">اعتماد النتيجة</button>
                         <div class="confirmed-label">✔ معتمدة لايف</div>
+                        <div class="time-label">${m.time ? 'التوقيت: ' + m.time : ''}</div>
                     </div>`;
             });
             container.innerHTML += `<div class="round-box">${roundHTML}</div>`;
@@ -129,16 +136,26 @@
         const s2 = parseInt(document.getElementById(`s2-${rIdx}-${mIdx}`).value);
         if (isNaN(s1) || isNaN(s2)) return alert("سجل الأهداف أولاً!");
         if (prompt("أدخل كلمة السر:") !== SECRET_KEY) return alert("كلمة سر خاطئة!");
-        db.ref(`league/${rIdx}/${mIdx}`).update({ s1, s2, confirmed: true });
+
+        // إنشاء التوقيت الحالي بتنسيق عربي
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }) + ' | ' + now.toLocaleDateString('ar-SA');
+
+        db.ref(`league/${rIdx}/${mIdx}`).update({ 
+            s1: s1, 
+            s2: s2, 
+            confirmed: true,
+            time: timeString // حفظ الوقت في قاعدة البيانات
+        });
     }
 
     function addNewRound() {
         db.ref('league').once('value', (snap) => {
             const data = snap.val() || [];
             const newRound = [
-                { p1: "أحمد", p2: "مشعل", s1: null, s2: null, confirmed: false },
-                { p1: "مشعل", p2: "فيصل", s1: null, s2: null, confirmed: false },
-                { p1: "فيصل", p2: "أحمد", s1: null, s2: null, confirmed: false }
+                { p1: "أحمد", p2: "مشعل", s1: null, s2: null, confirmed: false, time: null },
+                { p1: "مشعل", p2: "فيصل", s1: null, s2: null, confirmed: false, time: null },
+                { p1: "فيصل", p2: "أحمد", s1: null, s2: null, confirmed: false, time: null }
             ];
             data.push(newRound);
             db.ref('league').set(data);
