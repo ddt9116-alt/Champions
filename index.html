@@ -3,105 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دوري الثلاثي - الأساطير</title>
+    <title>دوري الأساطير المباشر</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
     <style>
-        :root {
-            --bg: #0f172a;
-            --card-bg: #1e293b;
-            --primary: #3b82f6;
-            --success: #10b981;
-            --text-main: #f8fafc;
-            --text-dim: #94a3b8;
-            --border: #334155;
-        }
-
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
-            padding: 15px;
-            margin: 0;
-        }
-
+        :root { --bg: #0f172a; --card-bg: #1e293b; --primary: #3b82f6; --success: #10b981; --text-main: #f8fafc; --text-dim: #94a3b8; --border: #334155; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text-main); padding: 15px; margin: 0; }
         .container { max-width: 450px; margin: auto; }
-
-        h2 { text-align: center; color: var(--primary); margin-bottom: 25px; font-weight: 800; }
-
-        /* جدول الترتيب */
-        .standings-container {
-            background: var(--card-bg);
-            border-radius: 20px;
-            padding: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
-            margin-bottom: 30px;
-            border: 1px solid var(--border);
-        }
-
+        .standings-container { background: var(--card-bg); border-radius: 20px; padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); margin-bottom: 30px; border: 1px solid var(--border); }
         .standings-table { width: 100%; border-collapse: collapse; text-align: center; }
         .standings-table th { color: var(--text-dim); font-size: 0.75rem; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-        .standings-table td { padding: 12px 5px; font-weight: bold; font-size: 0.95rem; }
-        
+        .standings-table td { padding: 12px 5px; font-weight: bold; }
         .rank-1 { color: #fbbf24; background: rgba(251, 191, 36, 0.1); border-radius: 10px; }
-
-        /* الجولات والمباريات */
-        .round-box { margin-bottom: 25px; }
-        .match-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            padding: 15px;
-            border-radius: 15px;
-            margin-bottom: 12px;
-        }
-
+        .match-card { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 15px; margin-bottom: 12px; }
         .match-row { display: grid; grid-template-columns: 1fr 45px 15px 45px 1fr; align-items: center; gap: 10px; }
-        .team-name { font-size: 1rem; font-weight: 600; }
-        
-        .score-in { 
-            width: 45px; height: 40px; 
-            background: #0f172a; 
-            border: 2px solid var(--border); 
-            border-radius: 10px; 
-            color: white; 
-            text-align: center; 
-            font-size: 1.2rem; 
-            font-weight: bold;
-        }
-
-        .confirm-btn {
-            width: 100%;
-            margin-top: 12px;
-            padding: 12px;
-            border: none;
-            border-radius: 10px;
-            background: var(--primary);
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        /* حالة المباراة المؤكدة */
-        .match-card.is-confirmed { border-color: var(--success); background: rgba(16, 185, 129, 0.05); }
-        .match-card.is-confirmed .score-in { border-color: var(--success); color: var(--success); }
-        .match-card.is-confirmed .confirm-btn { display: none; }
-        
+        .score-in { width: 45px; height: 40px; background: #0f172a; border: 2px solid var(--border); border-radius: 10px; color: white; text-align: center; font-size: 1.2rem; font-weight: bold; }
+        .confirm-btn { width: 100%; margin-top: 12px; padding: 12px; border: none; border-radius: 10px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; }
+        .is-confirmed { border-color: var(--success); background: rgba(16, 185, 129, 0.05); }
+        .is-confirmed .confirm-btn { display: none; }
         .confirmed-label { display: none; text-align: center; color: var(--success); margin-top: 10px; font-size: 0.8rem; font-weight: bold; }
-        .match-card.is-confirmed .confirmed-label { display: block; }
-
-        .btn-new {
-            width: 100%; padding: 16px;
-            background: linear-gradient(to right, #2563eb, #3b82f6);
-            color: white; border: none; border-radius: 15px;
-            font-weight: 800; cursor: pointer; margin-top: 10px;
-        }
-        .btn-new:disabled { opacity: 0.1; cursor: not-allowed; }
-
+        .is-confirmed .confirmed-label { display: block; }
+        .btn-new { width: 100%; padding: 16px; background: linear-gradient(to right, #2563eb, #3b82f6); color: white; border: none; border-radius: 15px; font-weight: 800; cursor: pointer; margin-top: 10px; }
+        .btn-new:disabled { opacity: 0.1; }
         input:disabled { opacity: 1; -webkit-text-fill-color: var(--success); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🏆 دوري الأساطير الأبدي</h2>
+    <h2 style="text-align: center; color: var(--primary);">🏆 دوري الأساطير مباشر</h2>
     
     <div class="standings-container">
         <table class="standings-table">
@@ -122,51 +53,71 @@
 </div>
 
 <script>
+    // إعدادات Firebase الخاصة بك
+    const firebaseConfig = {
+        apiKey: "AIzaSyA_s2HoKKxwXELNHEmti_RsvA_nP6fmWP8",
+        authDomain: "nhffbjhh.firebaseapp.com",
+        databaseURL: "https://nhffbjhh-default-rtdb.firebaseio.com",
+        projectId: "nhffbjhh",
+        storageBucket: "nhffbjhh.firebasestorage.app",
+        messagingSenderId: "779073349880",
+        appId: "1:779073349880:web:9cd7adb0ed3c628546b30d"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
     const players = ["أحمد", "مشعل", "فيصل"];
     const SECRET_KEY = "ddt";
 
-    function updateLeague() {
+    // الاستماع للتغييرات في قاعدة البيانات فوراً
+    db.ref('league').on('value', (snapshot) => {
+        const data = snapshot.val() || [];
+        renderAll(data);
+    });
+
+    function renderAll(roundsData) {
         let stats = {};
         players.forEach(p => stats[p] = { played: 0, gf: 0, ga: 0, pts: 0 });
+        
+        const container = document.getElementById('rounds-list');
+        container.innerHTML = '';
 
-        const allMatchCards = document.querySelectorAll('.match-card');
-        let currentRounds = [];
-        let currentRoundMatches = [];
+        roundsData.forEach((round, rIdx) => {
+            let roundHTML = `<div style="margin-bottom:10px; font-weight:bold; color:var(--text-dim); border-right:3px solid var(--primary); padding-right:8px;">الجولة ${rIdx + 1}</div>`;
+            
+            round.forEach((m, mIdx) => {
+                if (m.confirmed) {
+                    stats[m.p1].played++; stats[m.p2].played++;
+                    stats[m.p1].gf += m.s1; stats[m.p1].ga += m.s2;
+                    stats[m.p2].gf += m.s2; stats[m.p2].ga += m.s1;
+                    if (m.s1 > m.s2) stats[m.p1].pts += 3;
+                    else if (m.s2 > m.s1) stats[m.p2].pts += 3;
+                    else { stats[m.p1].pts += 1; stats[m.p2].pts += 1; }
+                }
 
-        allMatchCards.forEach((card, index) => {
-            const s1V = card.querySelector('.s1').value;
-            const s2V = card.querySelector('.s2').value;
-            const isConfirmed = card.classList.contains('is-confirmed');
-            const p1 = card.querySelector('.p1-name').innerText;
-            const p2 = card.querySelector('.p2-name').innerText;
-
-            const matchObj = { s1: s1V === "" ? null : parseInt(s1V), s2: s2V === "" ? null : parseInt(s2V), confirmed: isConfirmed };
-            currentRoundMatches.push(matchObj);
-
-            if (isConfirmed) {
-                const s1 = matchObj.s1; const s2 = matchObj.s2;
-                stats[p1].played++; stats[p2].played++;
-                stats[p1].gf += s1; stats[p1].ga += s2;
-                stats[p2].gf += s2; stats[p2].ga += s1;
-                if (s1 > s2) stats[p1].pts += 3;
-                else if (s2 > s1) stats[p2].pts += 3;
-                else { stats[p1].pts += 1; stats[p2].pts += 1; }
-            }
-
-            if ((index + 1) % 3 === 0) {
-                currentRounds.push(currentRoundMatches);
-                currentRoundMatches = [];
-            }
+                roundHTML += `
+                    <div class="match-card ${m.confirmed ? 'is-confirmed' : ''}">
+                        <div class="match-row">
+                            <span class="team-name" style="text-align:left">${m.p1}</span>
+                            <input type="number" class="score-in" id="s1-${rIdx}-${mIdx}" value="${m.s1??''}" ${m.confirmed?'disabled':''}>
+                            <span style="color:var(--text-dim)">-</span>
+                            <input type="number" class="score-in" id="s2-${rIdx}-${mIdx}" value="${m.s2??''}" ${m.confirmed?'disabled':''}>
+                            <span class="team-name" style="text-align:right">${m.p2}</span>
+                        </div>
+                        <button class="confirm-btn" onclick="confirmMatch(${rIdx}, ${mIdx})">اعتماد النتيجة</button>
+                        <div class="confirmed-label">✔ معتمدة لايف</div>
+                    </div>`;
+            });
+            container.innerHTML += `<div class="round-box">${roundHTML}</div>`;
         });
 
-        localStorage.setItem('ultimateLeagueSave', JSON.stringify(currentRounds));
-        const lastRoundComplete = currentRounds.length > 0 && currentRounds[currentRounds.length-1].every(m => m.confirmed);
-        document.getElementById('add-round-btn').disabled = currentRounds.length > 0 && !lastRoundComplete;
-
-        renderStandings(stats);
+        updateStandingsUI(stats);
+        
+        const isLastRoundComplete = roundsData.length === 0 || roundsData[roundsData.length-1].every(m => m.confirmed);
+        document.getElementById('add-round-btn').disabled = !isLastRoundComplete;
     }
 
-    function renderStandings(stats) {
+    function updateStandingsUI(stats) {
         const sorted = Object.keys(stats).map(name => ({ name, ...stats[name] }))
             .sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga));
         const tbody = document.getElementById('standings-body');
@@ -174,64 +125,33 @@
         sorted.forEach((p, i) => {
             tbody.innerHTML += `<tr class="${i===0?'rank-1':''}">
                 <td style="text-align:right; padding-right:15px;">${p.name}</td>
-                <td>${p.played}</td>
-                <td>${p.gf - p.ga}</td>
-                <td style="color:var(--primary)">${p.pts}</td>
+                <td>${p.played}</td><td>${p.gf - p.ga}</td><td style="color:var(--primary)">${p.pts}</td>
             </tr>`;
         });
     }
 
-    function confirmWithPass(btn) {
-        const card = btn.closest('.match-card');
-        const s1 = card.querySelector('.s1').value;
-        const s2 = card.querySelector('.score-in.s2').value; // تعديل طفيف للمعرف
+    function confirmMatch(rIdx, mIdx) {
+        const s1 = parseInt(document.getElementById(`s1-${rIdx}-${mIdx}`).value);
+        const s2 = parseInt(document.getElementById(`s2-${rIdx}-${mIdx}`).value);
         
-        if (s1 === "" || s2 === "") return alert("أدخل النتيجة أولاً!");
+        if (isNaN(s1) || isNaN(s2)) return alert("سجل الأهداف أولاً!");
+        if (prompt("أدخل كلمة السر ddt:") !== SECRET_KEY) return alert("خطأ!");
 
-        const pass = prompt("أدخل كلمة السر لاعتماد المباراة:");
-        if (pass === SECRET_KEY) {
-            card.classList.add('is-confirmed');
-            card.querySelectorAll('input').forEach(i => i.disabled = true);
-            updateLeague();
-        } else {
-            alert("خطأ! لن يتم الحفظ.");
-        }
+        db.ref(`league/${rIdx}/${mIdx}`).update({ s1, s2, confirmed: true });
     }
 
-    function addNewRound(data = null) {
-        const container = document.getElementById('rounds-list');
-        const roundNum = container.children.length + 1;
-        const div = document.createElement('div');
-        div.className = 'round-box';
-        
-        const mDefs = [{p1: "أحمد", p2: "مشعل"}, {p1: "مشعل", p2: "فيصل"}, {p1: "فيصل", p2: "أحمد"}];
-        let mHTML = '';
-        mDefs.forEach((m, i) => {
-            const mData = data ? data[i] : null;
-            const confirmedClass = mData && mData.confirmed ? 'is-confirmed' : '';
-            const disabledAttr = mData && mData.confirmed ? 'disabled' : '';
-            mHTML += `
-                <div class="match-card ${confirmedClass}">
-                    <div class="match-row">
-                        <span class="team-name p1-name" style="text-align:left">${m.p1}</span>
-                        <input type="number" class="score-in s1" value="${mData?mData.s1:''}" ${disabledAttr} placeholder="0">
-                        <span style="color:var(--text-dim)">-</span>
-                        <input type="number" class="score-in s2" value="${mData?mData.s2:''}" ${disabledAttr} placeholder="0">
-                        <span class="team-name p2-name" style="text-align:right">${m.p2}</span>
-                    </div>
-                    <button class="confirm-btn" onclick="confirmWithPass(this)">اعتماد النتيجة</button>
-                    <div class="confirmed-label">✔ معتمدة</div>
-                </div>`;
+    function addNewRound() {
+        db.ref('league').once('value', (snap) => {
+            const data = snap.val() || [];
+            const newRound = [
+                { p1: "أحمد", p2: "مشعل", s1: null, s2: null, confirmed: false },
+                { p1: "مشعل", p2: "فيصل", s1: null, s2: null, confirmed: false },
+                { p1: "فيصل", p2: "أحمد", s1: null, s2: null, confirmed: false }
+            ];
+            data.push(newRound);
+            db.ref('league').set(data);
         });
-
-        div.innerHTML = `<div style="margin-bottom:10px; font-weight:bold; color:var(--text-dim); border-right:3px solid var(--primary); padding-right:8px;">الجولة ${roundNum}</div>${mHTML}`;
-        container.appendChild(div);
-        updateLeague();
     }
-
-    const saved = JSON.parse(localStorage.getItem('ultimateLeagueSave')) || [];
-    if(saved.length > 0) saved.forEach(r => addNewRound(r));
-    else addNewRound();
 </script>
 </body>
 </html>
