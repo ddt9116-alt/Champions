@@ -1,135 +1,18 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دوري الأساطير - إدارة النتائج</title>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    
-    <style>
-        :root { --bg: #0f172a; --card-bg: #1e293b; --primary: #3b82f6; --success: #10b981; --text-main: #f8fafc; --text-dim: #94a3b8; --border: #334155; --danger: #ef4444; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text-main); padding: 15px; margin: 0; }
-        .container { max-width: 450px; margin: auto; }
-        .standings-container { background: var(--card-bg); border-radius: 20px; padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); margin-bottom: 30px; border: 1px solid var(--border); }
-        .standings-table { width: 100%; border-collapse: collapse; text-align: center; }
-        .standings-table th { color: var(--text-dim); font-size: 0.75rem; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-        .standings-table td { padding: 12px 5px; font-weight: bold; }
-        .rank-1 { color: #fbbf24; background: rgba(251, 191, 36, 0.1); border-radius: 10px; }
-        .match-card { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 15px; margin-bottom: 12px; }
-        .match-row { display: grid; grid-template-columns: 1fr 45px 15px 45px 1fr; align-items: center; gap: 10px; }
-        .score-box { background: #0f172a; border: 2px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; height: 45px; }
-        .score-in { width: 100%; background: transparent; border: none; color: white; text-align: center; font-size: 1.2rem; font-weight: bold; outline: none; }
-        .confirm-btn { width: 100%; margin-top: 12px; padding: 12px; border: none; border-radius: 10px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; }
-        .is-confirmed { border-color: var(--success); background: rgba(16, 185, 129, 0.05); }
-        .is-confirmed .confirm-btn { display: none; }
-        
-        /* تنسيق الوقت المضاف */
-        .time-label { font-size: 0.65rem; color: var(--text-dim); margin-top: 8px; text-align: center; display: none; }
-        .is-confirmed .time-label { display: block; }
-        
-        .confirmed-label { display: none; text-align: center; color: var(--success); margin-top: 5px; font-size: 0.8rem; font-weight: bold; }
-        .is-confirmed .confirmed-label { display: block; }
-        
-        .btn-new { width: 100%; padding: 16px; background: linear-gradient(to right, #2563eb, #3b82f6); color: white; border: none; border-radius: 15px; font-weight: 800; cursor: pointer; margin-top: 10px; }
-        .btn-new:disabled { opacity: 0.1; }
-        input:disabled { opacity: 1; -webkit-text-fill-color: var(--success); }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h2 style="text-align: center; color: var(--primary);">🏆 دوري الأساطير</h2>
-    
-    <div class="standings-container">
-        <table class="standings-table">
-            <thead>
-                <tr>
-                    <th>اللاعب</th>
-                    <th>لعب</th>
-                    <th>فارق</th>
-                    <th>نقاط</th>
-                </tr>
-            </thead>
-            <tbody id="standings-body"></tbody>
-        </table>
-    </div>
-
-    <div id="rounds-list"></div>
-    <button id="add-round-btn" class="btn-new" onclick="addNewRound()">+ افتح جولة جديدة</button>
-</div>
+<style>
+    /* ... التنسيقات السابقة ... */
+    .time-label { 
+        font-size: 0.65rem; 
+        color: var(--text-dim); 
+        margin-top: 8px; 
+        text-align: center; 
+        display: none;
+        direction: ltr; /* لضمان ظهور الوقت من اليسار لليمين بشكل صحيح مع الأرقام الإنجليزية */
+    }
+    .is-confirmed .time-label { display: block; }
+</style>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyA_s2HoKKxwXELNHEmti_RsvA_nP6fmWP8",
-        authDomain: "nhffbjhh.firebaseapp.com",
-        databaseURL: "https://nhffbjhh-default-rtdb.firebaseio.com",
-        projectId: "nhffbjhh",
-        storageBucket: "nhffbjhh.firebasestorage.app",
-        messagingSenderId: "779073349880",
-        appId: "1:779073349880:web:9cd7adb0ed3c628546b30d"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const players = ["أحمد", "مشعل", "فيصل"];
-    const SECRET_KEY = "ddt";
-
-    db.ref('league').on('value', (snapshot) => {
-        const data = snapshot.val() || [];
-        renderAll(data);
-    });
-
-    function renderAll(roundsData) {
-        let stats = {};
-        players.forEach(p => stats[p] = { played: 0, gf: 0, ga: 0, pts: 0 });
-        const container = document.getElementById('rounds-list');
-        container.innerHTML = '';
-
-        roundsData.forEach((round, rIdx) => {
-            let roundHTML = `<div style="margin-bottom:10px; font-weight:bold; color:var(--text-dim); border-right:3px solid var(--primary); padding-right:8px;">الجولة ${rIdx + 1}</div>`;
-            round.forEach((m, mIdx) => {
-                if (m.confirmed) {
-                    stats[m.p1].played++; stats[m.p2].played++;
-                    stats[m.p1].gf += m.s1; stats[m.p1].ga += m.s2;
-                    stats[m.p2].gf += m.s2; stats[m.p2].ga += m.s1;
-                    if (m.s1 > m.s2) stats[m.p1].pts += 3;
-                    else if (m.s2 > m.s1) stats[m.p2].pts += 3;
-                    else { stats[m.p1].pts += 1; stats[m.p2].pts += 1; }
-                }
-                roundHTML += `
-                    <div class="match-card ${m.confirmed ? 'is-confirmed' : ''}">
-                        <div class="match-row">
-                            <span class="team-name" style="text-align:left">${m.p1}</span>
-                            <div class="score-box"><input type="number" class="score-in" id="s1-${rIdx}-${mIdx}" value="${m.s1??''}" ${m.confirmed?'disabled':''}></div>
-                            <span style="color:var(--text-dim)">-</span>
-                            <div class="score-box"><input type="number" class="score-in" id="s2-${rIdx}-${mIdx}" value="${m.s2??''}" ${m.confirmed?'disabled':''}></div>
-                            <span class="team-name" style="text-align:right">${m.p2}</span>
-                        </div>
-                        <button class="confirm-btn" onclick="confirmMatch(${rIdx}, ${mIdx})">اعتماد النتيجة</button>
-                        <div class="confirmed-label">✔ معتمدة لايف</div>
-                        <div class="time-label">${m.time ? 'التوقيت: ' + m.time : ''}</div>
-                    </div>`;
-            });
-            container.innerHTML += `<div class="round-box">${roundHTML}</div>`;
-        });
-        updateStandingsUI(stats);
-        const isLastRoundComplete = roundsData.length === 0 || roundsData[roundsData.length-1].every(m => m.confirmed);
-        document.getElementById('add-round-btn').disabled = !isLastRoundComplete;
-    }
-
-    function updateStandingsUI(stats) {
-        const sorted = Object.keys(stats).map(name => ({ name, ...stats[name] }))
-            .sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga));
-        const tbody = document.getElementById('standings-body');
-        tbody.innerHTML = '';
-        sorted.forEach((p, i) => {
-            tbody.innerHTML += `<tr class="${i===0?'rank-1':''}">
-                <td style="text-align:right; padding-right:15px;">${p.name}</td>
-                <td>${p.played}</td><td>${p.gf - p.ga}</td><td style="color:var(--primary)">${p.pts}</td>
-            </tr>`;
-        });
-    }
+    // ... الإعدادات السابقة ...
 
     function confirmMatch(rIdx, mIdx) {
         const s1 = parseInt(document.getElementById(`s1-${rIdx}-${mIdx}`).value);
@@ -137,30 +20,30 @@
         if (isNaN(s1) || isNaN(s2)) return alert("سجل الأهداف أولاً!");
         if (prompt("أدخل كلمة السر:") !== SECRET_KEY) return alert("كلمة سر خاطئة!");
 
-        // إنشاء التوقيت الحالي بتنسيق عربي
+        // التعديل هنا: استخدام تنسيق إنجليزي (ميلادي وأرقام إنجليزية)
         const now = new Date();
-        const timeString = now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }) + ' | ' + now.toLocaleDateString('ar-SA');
+        const timeOptions = { 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            hour12: true 
+        };
+        const dateOptions = { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric' 
+        };
+
+        const timeString = now.toLocaleTimeString('en-GB', timeOptions);
+        const dateString = now.toLocaleDateString('en-GB', dateOptions);
+        const finalStamp = `${timeString} | ${dateString}`;
 
         db.ref(`league/${rIdx}/${mIdx}`).update({ 
             s1: s1, 
             s2: s2, 
             confirmed: true,
-            time: timeString // حفظ الوقت في قاعدة البيانات
+            time: finalStamp 
         });
     }
 
-    function addNewRound() {
-        db.ref('league').once('value', (snap) => {
-            const data = snap.val() || [];
-            const newRound = [
-                { p1: "أحمد", p2: "مشعل", s1: null, s2: null, confirmed: false, time: null },
-                { p1: "مشعل", p2: "فيصل", s1: null, s2: null, confirmed: false, time: null },
-                { p1: "فيصل", p2: "أحمد", s1: null, s2: null, confirmed: false, time: null }
-            ];
-            data.push(newRound);
-            db.ref('league').set(data);
-        });
-    }
+    // ... باقي الدوال (renderAll, updateStandingsUI, addNewRound) تبقى كما هي ...
 </script>
-</body>
-</html>
