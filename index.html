@@ -68,7 +68,7 @@ appId: "1:779073349880:web:9cd7adb0ed3c628546b30d"
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const players = ["أحمد", "مشعل", "فيصل"];
-const SECRET_KEY = "ddt";
+const SECRET_KEY = "algm";
 
 db.ref('league').on('value', (snapshot) => {
 const data = snapshot.val() || [];
