@@ -29,7 +29,6 @@
         .standings-table td { padding: 12px 5px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .rank-1 { color: var(--gold); background: rgba(251, 191, 36, 0.05); }
 
-        /* الأوسمة والنجوم */
         .stars-container { display: inline-flex; gap: 8px; vertical-align: middle; margin-right: 10px; }
         .star-badge { position: relative; display: flex; align-items: center; font-size: 1.1rem; }
         .star-count { 
@@ -38,11 +37,9 @@
         }
         .streak-fire { font-size: 0.7rem; color: #ff4500; font-weight: normal; margin-top: 2px; }
 
-        /* سجل المواجهات */
         .h2h-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
         .h2h-score { background: #0f172a; padding: 4px 12px; border-radius: 20px; color: var(--primary); font-weight: 800; border: 1px solid var(--border); }
 
-        /* المباريات */
         .round-title { margin: 20px 0 10px; font-weight: bold; color: var(--primary); font-size: 0.9rem; }
         .match-card { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 15px; margin-bottom: 10px; }
         .match-row { display: grid; grid-template-columns: 1fr 45px 15px 45px 1fr; align-items: center; gap: 8px; }
@@ -77,6 +74,11 @@
             </thead>
             <tbody id="standings-body"></tbody>
         </table>
+    </div>
+
+    <div class="section-card">
+        <h3>🔝 أكبر 5 انتصارات</h3>
+        <div id="top-wins-container"></div>
     </div>
 
     <div class="section-card">
@@ -120,6 +122,7 @@
         });
 
         let h2h = { "أحمد_مشعل": { p1: 0, p2: 0 }, "أحمد_فيصل": { p1: 0, p2: 0 }, "مشعل_فيصل": { p1: 0, p2: 0 } };
+        let allConfirmedMatches = [];
 
         const container = document.getElementById('rounds-list');
         container.innerHTML = '';
@@ -132,21 +135,17 @@
                     stats[m.p1].gf += m.s1; stats[m.p1].ga += m.s2;
                     stats[m.p2].gf += m.s2; stats[m.p2].ga += m.s1;
 
-                    // منطق السلاسل والأوسمة
-                    if (m.s1 > m.s2) {
-                        applyWin(stats, m.p1, m.p2);
-                    } else if (m.s2 > m.s1) {
-                        applyWin(stats, m.p2, m.p1);
-                    } else {
-                        stats[m.p1].pts += 1; stats[m.p2].pts += 1;
-                        stats[m.p1].currentStreak = 0; stats[m.p2].currentStreak = 0;
-                    }
+                    if (m.s1 > m.s2) applyWin(stats, m.p1, m.p2);
+                    else if (m.s2 > m.s1) applyWin(stats, m.p2, m.p1);
+                    else { stats[m.p1].pts += 1; stats[m.p2].pts += 1; stats[m.p1].currentStreak = 0; stats[m.p2].currentStreak = 0; }
 
                     const key = getH2HKey(m.p1, m.p2);
                     if (key) {
                         if (m.s1 > m.s2) m.p1 === key.split('_')[0] ? h2h[key].p1++ : h2h[key].p2++;
                         else if (m.s2 > m.s1) m.p2 === key.split('_')[1] ? h2h[key].p2++ : h2h[key].p1++;
                     }
+
+                    allConfirmedMatches.push({ p1: m.p1, p2: m.p2, s1: m.s1, s2: m.s2, diff: Math.abs(m.s1 - m.s2) });
                 }
                 roundHTML += generateMatchHTML(m, rIdx, mIdx);
             });
@@ -156,6 +155,9 @@
         updateStandingsUI(stats);
         updateH2HUI(h2h);
         
+        allConfirmedMatches.sort((a, b) => b.diff - a.diff || (b.s1 + b.s2) - (a.s1 + a.s2));
+        updateTopWinsUI(allConfirmedMatches.slice(0, 5));
+        
         const isLastRoundComplete = roundsData.length === 0 || roundsData[roundsData.length-1].every(m => m.confirmed);
         document.getElementById('add-round-btn').disabled = !isLastRoundComplete;
     }
@@ -164,25 +166,20 @@
         stats[winner].pts += 3;
         stats[winner].currentStreak++;
         stats[loser].currentStreak = 0;
-
         let s = stats[winner].currentStreak;
         if (s === 5) stats[winner].stars.bronze++;
         else if (s === 10) stats[winner].stars.silver++;
         else if (s === 15) stats[winner].stars.gold++;
-        else if (s === 20) {
-            stats[winner].stars.legendary++;
-            stats[winner].currentStreak = 0; // إعادة التصفير بعد الأسطورية
-        }
+        else if (s === 20) { stats[winner].stars.legendary++; stats[winner].currentStreak = 0; }
     }
 
-    function getStarsHTML(stars) {
-        let html = '<div class="stars-container">';
-        if (stars.legendary > 0) html += `<span class="star-badge">💎<span class="star-count">${stars.legendary}</span></span>`;
-        if (stars.gold > 0) html += `<span class="star-badge">⭐<span class="star-count">${stars.gold}</span></span>`;
-        if (stars.silver > 0) html += `<span class="star-badge">🥈<span class="star-count">${stars.silver}</span></span>`;
-        if (stars.bronze > 0) html += `<span class="star-badge">🥉<span class="star-count">${stars.bronze}</span></span>`;
-        html += '</div>';
-        return html;
+    function updateTopWinsUI(topMatches) {
+        const container = document.getElementById('top-wins-container');
+        container.innerHTML = topMatches.length === 0 ? '<div style="text-align:center; color:var(--text-dim); font-size:0.8rem;">لا توجد نتائج مسجلة</div>' : '';
+        topMatches.forEach((m, i) => {
+            const winner = m.s1 > m.s2 ? m.p1 : m.p2;
+            container.innerHTML += `<div class="h2h-row"><span style="color:var(--gold); font-size:0.7rem;">#${i+1}</span><span style="${m.p1===winner?'color:var(--success)':''}">${m.p1}</span><div class="h2h-score" style="background:var(--bg); border:none;">${m.s1}-${m.s2}</div><span style="${m.p2===winner?'color:var(--success)':''}">${m.p2}</span></div>`;
+        });
     }
 
     function updateStandingsUI(stats) {
@@ -193,15 +190,21 @@
         sorted.forEach((p, i) => {
             tbody.innerHTML += `<tr class="${i===0?'rank-1':''}">
                 <td style="text-align:right; padding-right:15px;">
-                    <div style="display:flex; align-items:center;">
-                        <span>${p.name}</span>
-                        ${getStarsHTML(p.stars)}
-                    </div>
+                    <div style="display:flex; align-items:center;"><span>${p.name}</span>${getStarsHTML(p.stars)}</div>
                     <div class="streak-fire">${p.currentStreak > 0 ? '🔥 سلسلة فوز: ' + p.currentStreak : ''}</div>
                 </td>
                 <td>${p.played}</td><td>${p.gf - p.ga}</td><td style="color:var(--primary)">${p.pts}</td>
             </tr>`;
         });
+    }
+
+    function getStarsHTML(stars) {
+        let html = '<div class="stars-container">';
+        if (stars.legendary > 0) html += `<span class="star-badge">💎<span class="star-count">${stars.legendary}</span></span>`;
+        if (stars.gold > 0) html += `<span class="star-badge">⭐<span class="star-count">${stars.gold}</span></span>`;
+        if (stars.silver > 0) html += `<span class="star-badge">🥈<span class="star-count">${stars.silver}</span></span>`;
+        if (stars.bronze > 0) html += `<span class="star-badge">🥉<span class="star-count">${stars.bronze}</span></span>`;
+        return html + '</div>';
     }
 
     function getH2HKey(p1, p2) {
@@ -221,18 +224,17 @@
     }
 
     function generateMatchHTML(m, rIdx, mIdx) {
-        return `
-            <div class="match-card ${m.confirmed ? 'is-confirmed' : ''}">
-                <div class="match-row">
-                    <span style="text-align:left">${m.p1}</span>
-                    <div class="score-box"><input type="number" class="score-in" id="s1-${rIdx}-${mIdx}" value="${m.s1??''}" ${m.confirmed?'disabled':''}></div>
-                    <span style="color:var(--text-dim); text-align:center">-</span>
-                    <div class="score-box"><input type="number" class="score-in" id="s2-${rIdx}-${mIdx}" value="${m.s2??''}" ${m.confirmed?'disabled':''}></div>
-                    <span style="text-align:right">${m.p2}</span>
-                </div>
-                <button class="confirm-btn" onclick="confirmMatch(${rIdx}, ${mIdx})">اعتماد النتيجة</button>
-                <div class="confirmed-badge">✓ تم الاعتماد (${m.date || ''})</div>
-            </div>`;
+        return `<div class="match-card ${m.confirmed ? 'is-confirmed' : ''}">
+            <div class="match-row">
+                <span style="text-align:left">${m.p1}</span>
+                <div class="score-box"><input type="number" class="score-in" id="s1-${rIdx}-${mIdx}" value="${m.s1??''}" ${m.confirmed?'disabled':''}></div>
+                <span style="color:var(--text-dim); text-align:center">-</span>
+                <div class="score-box"><input type="number" class="score-in" id="s2-${rIdx}-${mIdx}" value="${m.s2??''}" ${m.confirmed?'disabled':''}></div>
+                <span style="text-align:right">${m.p2}</span>
+            </div>
+            <button class="confirm-btn" onclick="confirmMatch(${rIdx}, ${mIdx})">اعتماد النتيجة</button>
+            <div class="confirmed-badge">✓ تم الاعتماد (${m.date || ''})</div>
+        </div>`;
     }
 
     function confirmMatch(rIdx, mIdx) {
@@ -240,19 +242,17 @@
         const s2 = parseInt(document.getElementById(`s2-${rIdx}-${mIdx}`).value);
         if (isNaN(s1) || isNaN(s2)) return alert("أدخل النتيجة!");
         if (prompt("كلمة السر:") !== SECRET_KEY) return alert("خطأ!");
-        const date = new Date().toLocaleDateString('en-GB');
-        db.ref(`league/${rIdx}/${mIdx}`).update({ s1, s2, confirmed: true, date });
+        db.ref(`league/${rIdx}/${mIdx}`).update({ s1, s2, confirmed: true, date: new Date().toLocaleDateString('en-GB') });
     }
 
     function addNewRound() {
         db.ref('league').once('value', (snap) => {
             const data = snap.val() || [];
-            const newRound = [
+            data.push([
                 { p1: "أحمد", p2: "مشعل", s1: null, s2: null, confirmed: false },
                 { p1: "مشعل", p2: "فيصل", s1: null, s2: null, confirmed: false },
                 { p1: "فيصل", p2: "أحمد", s1: null, s2: null, confirmed: false }
-            ];
-            data.push(newRound);
+            ]);
             db.ref('league').set(data);
         });
     }
