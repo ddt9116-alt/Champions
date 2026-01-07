@@ -2,175 +2,236 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>دوري المحترفين - النسخة الكاملة</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;900&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دوري الثلاثي - الأساطير</title>
     <style>
-        body { font-family: 'Cairo', sans-serif; background-color: #0f172a; color: white; }
-        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        input[type="number"] { background: #1e293b; color: #fbbf24; border: none; text-align: center; font-weight: 900; border-radius: 8px; width: 45px; height: 35px; }
-        input:disabled { opacity: 0.5; cursor: not-allowed; }
-        .step-box { border-right: 4px solid #fbbf24; padding-right: 10px; }
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #3b82f6;
+            --success: #10b981;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --border: #334155;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            padding: 15px;
+            margin: 0;
+        }
+
+        .container { max-width: 450px; margin: auto; }
+
+        h2 { text-align: center; color: var(--primary); margin-bottom: 25px; font-weight: 800; }
+
+        /* جدول الترتيب */
+        .standings-container {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+        }
+
+        .standings-table { width: 100%; border-collapse: collapse; text-align: center; }
+        .standings-table th { color: var(--text-dim); font-size: 0.75rem; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+        .standings-table td { padding: 12px 5px; font-weight: bold; font-size: 0.95rem; }
+        
+        .rank-1 { color: #fbbf24; background: rgba(251, 191, 36, 0.1); border-radius: 10px; }
+
+        /* الجولات والمباريات */
+        .round-box { margin-bottom: 25px; }
+        .match-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 12px;
+        }
+
+        .match-row { display: grid; grid-template-columns: 1fr 45px 15px 45px 1fr; align-items: center; gap: 10px; }
+        .team-name { font-size: 1rem; font-weight: 600; }
+        
+        .score-in { 
+            width: 45px; height: 40px; 
+            background: #0f172a; 
+            border: 2px solid var(--border); 
+            border-radius: 10px; 
+            color: white; 
+            text-align: center; 
+            font-size: 1.2rem; 
+            font-weight: bold;
+        }
+
+        .confirm-btn {
+            width: 100%;
+            margin-top: 12px;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            background: var(--primary);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* حالة المباراة المؤكدة */
+        .match-card.is-confirmed { border-color: var(--success); background: rgba(16, 185, 129, 0.05); }
+        .match-card.is-confirmed .score-in { border-color: var(--success); color: var(--success); }
+        .match-card.is-confirmed .confirm-btn { display: none; }
+        
+        .confirmed-label { display: none; text-align: center; color: var(--success); margin-top: 10px; font-size: 0.8rem; font-weight: bold; }
+        .match-card.is-confirmed .confirmed-label { display: block; }
+
+        .btn-new {
+            width: 100%; padding: 16px;
+            background: linear-gradient(to right, #2563eb, #3b82f6);
+            color: white; border: none; border-radius: 15px;
+            font-weight: 800; cursor: pointer; margin-top: 10px;
+        }
+        .btn-new:disabled { opacity: 0.1; cursor: not-allowed; }
+
+        input:disabled { opacity: 1; -webkit-text-fill-color: var(--success); }
     </style>
 </head>
-<body class="p-3 pb-20">
-    <div class="max-w-md mx-auto space-y-4">
-        
-        <div class="flex justify-around items-center py-3 glass rounded-2xl border-b-2 border-amber-500 shadow-xl">
-            <div id="hist-أحمد" class="text-center"><p class="text-[10px] text-slate-400">أحمد</p><p class="text-xl font-black text-amber-500">0</p></div>
-            <div id="hist-مشعل" class="text-center"><p class="text-[10px] text-slate-400">مشعل</p><p class="text-xl font-black text-amber-500">0</p></div>
-            <div id="hist-فيصل" class="text-center"><p class="text-[10px] text-slate-400">فيصل</p><p class="text-xl font-black text-amber-500">0</p></div>
-        </div>
+<body>
 
-        <div id="contentArea" class="space-y-4">
-            <div class="glass rounded-2xl overflow-hidden shadow-lg">
-                <table class="w-full text-xs text-center">
-                    <thead class="bg-white/10 text-amber-400">
-                        <tr><th class="p-3 text-right">اللاعب</th><th class="p-3">لعب</th><th class="p-3 font-black">نقاط</th></tr>
-                    </thead>
-                    <tbody id="leagueBody" class="divide-y divide-white/5 font-bold"></tbody>
-                </table>
-            </div>
-
-            <div id="matchesList" class="space-y-2"></div>
-
-            <div id="playoffZone" class="hidden p-4 glass rounded-3xl border-2 border-indigo-500 bg-indigo-500/5 space-y-4">
-                <div class="step-box">
-                    <h3 class="text-indigo-400 font-black text-xs">1. مباراة الملحق (2 ضد 3)</h3>
-                    <div class="flex items-center gap-3 mt-2">
-                        <span id="p2Name" class="text-xs font-bold"></span>
-                        <input type="number" id="pScore1" oninput="runLogic()">
-                        <span>×</span>
-                        <input type="number" id="pScore2" oninput="runLogic()">
-                        <span id="p3Name" class="text-xs font-bold text-left"></span>
-                    </div>
-                </div>
-
-                <div id="finalZone" class="hidden step-box border-amber-500">
-                    <h3 class="text-amber-500 font-black text-xs">2. النهائي الكبير 👑</h3>
-                    <div class="flex items-center gap-3 mt-2">
-                        <span id="p1Name" class="text-xs font-black text-amber-400"></span>
-                        <input type="number" id="fScore1" class="border-2 border-amber-500" oninput="runLogic()">
-                        <span>×</span>
-                        <input type="number" id="fScore2" class="border-2 border-amber-500" oninput="runLogic()">
-                        <span id="pWinPlayoff" class="text-xs font-bold">؟</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="archiveBtnArea" class="pt-4">
-                <button onclick="showArchive()" class="w-full py-2 text-xs text-slate-500 underline">عرض أرشيف المواسم السابقة</button>
-            </div>
-        </div>
+<div class="container">
+    <h2>🏆 دوري الأساطير الأبدي</h2>
+    
+    <div class="standings-container">
+        <table class="standings-table">
+            <thead>
+                <tr>
+                    <th>اللاعب</th>
+                    <th>لعب</th>
+                    <th>فارق</th>
+                    <th>نقاط</th>
+                </tr>
+            </thead>
+            <tbody id="standings-body"></tbody>
+        </table>
     </div>
 
-<script>
-    let players = JSON.parse(localStorage.getItem('players')) || { "أحمد": { history: 0 }, "مشعل": { history: 0 }, "فيصل": { history: 0 } };
-    let seasons = JSON.parse(localStorage.getItem('seasons')) || [];
-    const matchesArr = [["أحمد","مشعل"],["مشعل","فيصل"],["فيصل","أحمد"],["مشعل","أحمد"],["فيصل","مشعل"],["أحمد","فيصل"]];
+    <div id="rounds-list"></div>
+    <button id="add-round-btn" class="btn-new" onclick="addNewRound()">+ افتح جولة جديدة</button>
+</div>
 
-    function setup() {
-        let h = '';
-        matchesArr.forEach((m, i) => {
-            h += `<div class="glass p-3 rounded-xl flex items-center justify-between">
-                <span class="w-16 font-bold text-slate-300 text-xs">${m[0]}</span>
-                <div class="flex items-center gap-2">
-                    <input type="number" class="l-in" oninput="runLogic()">
-                    <span class="text-slate-600">×</span>
-                    <input type="number" class="l-in" oninput="runLogic()">
-                </div>
-                <span class="w-16 text-left font-bold text-slate-300 text-xs">${m[1]}</span>
-            </div>`;
+<script>
+    const players = ["أحمد", "مشعل", "فيصل"];
+    const SECRET_KEY = "ddt";
+
+    function updateLeague() {
+        let stats = {};
+        players.forEach(p => stats[p] = { played: 0, gf: 0, ga: 0, pts: 0 });
+
+        const allMatchCards = document.querySelectorAll('.match-card');
+        let currentRounds = [];
+        let currentRoundMatches = [];
+
+        allMatchCards.forEach((card, index) => {
+            const s1V = card.querySelector('.s1').value;
+            const s2V = card.querySelector('.s2').value;
+            const isConfirmed = card.classList.contains('is-confirmed');
+            const p1 = card.querySelector('.p1-name').innerText;
+            const p2 = card.querySelector('.p2-name').innerText;
+
+            const matchObj = { s1: s1V === "" ? null : parseInt(s1V), s2: s2V === "" ? null : parseInt(s2V), confirmed: isConfirmed };
+            currentRoundMatches.push(matchObj);
+
+            if (isConfirmed) {
+                const s1 = matchObj.s1; const s2 = matchObj.s2;
+                stats[p1].played++; stats[p2].played++;
+                stats[p1].gf += s1; stats[p1].ga += s2;
+                stats[p2].gf += s2; stats[p2].ga += s1;
+                if (s1 > s2) stats[p1].pts += 3;
+                else if (s2 > s1) stats[p2].pts += 3;
+                else { stats[p1].pts += 1; stats[p2].pts += 1; }
+            }
+
+            if ((index + 1) % 3 === 0) {
+                currentRounds.push(currentRoundMatches);
+                currentRoundMatches = [];
+            }
         });
-        document.getElementById('matchesList').innerHTML = h;
-        updateUI();
+
+        localStorage.setItem('ultimateLeagueSave', JSON.stringify(currentRounds));
+        const lastRoundComplete = currentRounds.length > 0 && currentRounds[currentRounds.length-1].every(m => m.confirmed);
+        document.getElementById('add-round-btn').disabled = currentRounds.length > 0 && !lastRoundComplete;
+
+        renderStandings(stats);
     }
 
-    function runLogic() {
-        let stats = { "أحمد": {pts:0, pld:0, diff:0}, "مشعل": {pts:0, pld:0, diff:0}, "فيصل": {pts:0, pld:0, diff:0} };
-        const ins = document.querySelectorAll('.l-in');
-        let done = 0;
-        
-        matchesArr.forEach((m, i) => {
-            let g1 = parseInt(ins[i*2].value), g2 = parseInt(ins[i*2+1].value);
-            if (!isNaN(g1) && !isNaN(g2)) {
-                done++; stats[m[0]].pld++; stats[m[1]].pld++;
-                stats[m[0]].diff += (g1-g2); stats[m[1]].diff += (g2-g1);
-                if(g1 > g2) stats[m[0]].pts+=3; else if(g2 > g1) stats[m[1]].pts+=3; else {stats[m[0]].pts+=1; stats[m[1]].pts+=1;}
-            }
+    function renderStandings(stats) {
+        const sorted = Object.keys(stats).map(name => ({ name, ...stats[name] }))
+            .sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga));
+        const tbody = document.getElementById('standings-body');
+        tbody.innerHTML = '';
+        sorted.forEach((p, i) => {
+            tbody.innerHTML += `<tr class="${i===0?'rank-1':''}">
+                <td style="text-align:right; padding-right:15px;">${p.name}</td>
+                <td>${p.played}</td>
+                <td>${p.gf - p.ga}</td>
+                <td style="color:var(--primary)">${p.pts}</td>
+            </tr>`;
         });
+    }
 
-        let sorted = Object.keys(stats).sort((a,b) => stats[b].pts - stats[a].pts || stats[b].diff - stats[a].diff);
-        renderTable(sorted, stats);
+    function confirmWithPass(btn) {
+        const card = btn.closest('.match-card');
+        const s1 = card.querySelector('.s1').value;
+        const s2 = card.querySelector('.score-in.s2').value; // تعديل طفيف للمعرف
+        
+        if (s1 === "" || s2 === "") return alert("أدخل النتيجة أولاً!");
 
-        // منطق الملحق والنهائي
-        if(done === 6) {
-            document.getElementById('playoffZone').classList.remove('hidden');
-            document.getElementById('p2Name').innerText = sorted[1];
-            document.getElementById('p3Name').innerText = sorted[2];
-            document.getElementById('p1Name').innerText = sorted[0];
-
-            let ps1 = parseInt(document.getElementById('pScore1').value);
-            let ps2 = parseInt(document.getElementById('pScore2').value);
-            let winP = "";
-
-            if(!isNaN(ps1) && !isNaN(ps2)) {
-                winP = ps1 > ps2 ? sorted[1] : sorted[2];
-                document.getElementById('pWinPlayoff').innerText = winP;
-                document.getElementById('finalZone').classList.remove('hidden');
-            } else {
-                document.getElementById('finalZone').classList.add('hidden');
-            }
-
-            let fs1 = parseInt(document.getElementById('fScore1').value);
-            let fs2 = parseInt(document.getElementById('fScore2').value);
-            if(!isNaN(fs1) && !isNaN(fs2) && winP !== "") {
-                let absoluteWinner = fs1 > fs2 ? sorted[0] : winP;
-                setTimeout(() => { finishSeason(absoluteWinner); }, 600);
-            }
+        const pass = prompt("أدخل كلمة السر لاعتماد المباراة:");
+        if (pass === SECRET_KEY) {
+            card.classList.add('is-confirmed');
+            card.querySelectorAll('input').forEach(i => i.disabled = true);
+            updateLeague();
         } else {
-            document.getElementById('playoffZone').classList.add('hidden');
+            alert("خطأ! لن يتم الحفظ.");
         }
     }
 
-    function finishSeason(winner) {
-        let seasonData = {
-            id: seasons.length + 1,
-            winner: winner,
-            scores: Array.from(document.querySelectorAll('input')).map(i => i.value)
-        };
-        seasons.push(seasonData);
-        players[winner].history++;
-        localStorage.setItem('seasons', JSON.stringify(seasons));
-        localStorage.setItem('players', JSON.stringify(players));
-        alert("🎉 البطل هو " + winner + "! تم قفل الموسم والأرشفة.");
-        location.reload();
-    }
-
-    function renderTable(sorted, stats) {
-        let h = '';
-        sorted.forEach(n => {
-            h += `<tr><td class="p-3 text-right border-r-4 border-amber-500">${n}</td><td class="p-3">${stats[n].pld}</td><td class="p-3 text-indigo-400 font-black">${stats[n].pts}</td></tr>`;
-            document.querySelector(`#hist-${n} p:last-child`).innerText = players[n].history;
+    function addNewRound(data = null) {
+        const container = document.getElementById('rounds-list');
+        const roundNum = container.children.length + 1;
+        const div = document.createElement('div');
+        div.className = 'round-box';
+        
+        const mDefs = [{p1: "أحمد", p2: "مشعل"}, {p1: "مشعل", p2: "فيصل"}, {p1: "فيصل", p2: "أحمد"}];
+        let mHTML = '';
+        mDefs.forEach((m, i) => {
+            const mData = data ? data[i] : null;
+            const confirmedClass = mData && mData.confirmed ? 'is-confirmed' : '';
+            const disabledAttr = mData && mData.confirmed ? 'disabled' : '';
+            mHTML += `
+                <div class="match-card ${confirmedClass}">
+                    <div class="match-row">
+                        <span class="team-name p1-name" style="text-align:left">${m.p1}</span>
+                        <input type="number" class="score-in s1" value="${mData?mData.s1:''}" ${disabledAttr} placeholder="0">
+                        <span style="color:var(--text-dim)">-</span>
+                        <input type="number" class="score-in s2" value="${mData?mData.s2:''}" ${disabledAttr} placeholder="0">
+                        <span class="team-name p2-name" style="text-align:right">${m.p2}</span>
+                    </div>
+                    <button class="confirm-btn" onclick="confirmWithPass(this)">اعتماد النتيجة</button>
+                    <div class="confirmed-label">✔ معتمدة</div>
+                </div>`;
         });
-        document.getElementById('leagueBody').innerHTML = h;
+
+        div.innerHTML = `<div style="margin-bottom:10px; font-weight:bold; color:var(--text-dim); border-right:3px solid var(--primary); padding-right:8px;">الجولة ${roundNum}</div>${mHTML}`;
+        container.appendChild(div);
+        updateLeague();
     }
 
-    function showArchive() {
-        let h = '<button onclick="location.reload()" class="text-xs text-amber-500 mb-4 underline">← العودة للموسم الحالي</button><div class="space-y-3">';
-        seasons.slice().reverse().forEach(s => {
-            h += `<div class="glass p-4 rounded-2xl opacity-70">
-                <div class="flex justify-between text-xs mb-2"><span>موسم #${s.id}</span><span class="font-black text-amber-500">البطل: ${s.winner}</span></div>
-                <div class="flex flex-wrap gap-1 pointer-events-none">
-                    ${s.scores.map(sc => `<span class="bg-white/10 px-2 py-1 rounded text-[10px]">${sc || 0}</span>`).join('')}
-                </div>
-            </div>`;
-        });
-        document.getElementById('contentArea').innerHTML = h + (seasons.length? '':'<p class="text-center text-xs">لا يوجد أرشيف</p>') + '</div>';
-    }
-
-    setup();
+    const saved = JSON.parse(localStorage.getItem('ultimateLeagueSave')) || [];
+    if(saved.length > 0) saved.forEach(r => addNewRound(r));
+    else addNewRound();
 </script>
 </body>
 </html>
