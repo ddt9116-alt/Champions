@@ -1,49 +1,19 @@
-<style>
-    /* ... التنسيقات السابقة ... */
-    .time-label { 
-        font-size: 0.65rem; 
-        color: var(--text-dim); 
-        margin-top: 8px; 
-        text-align: center; 
-        display: none;
-        direction: ltr; /* لضمان ظهور الوقت من اليسار لليمين بشكل صحيح مع الأرقام الإنجليزية */
-    }
-    .is-confirmed .time-label { display: block; }
-</style>
+function confirmMatch(rIdx, mIdx) {
+    const s1 = parseInt(document.getElementById(`s1-${rIdx}-${mIdx}`).value);
+    const s2 = parseInt(document.getElementById(`s2-${rIdx}-${mIdx}`).value);
+    
+    if (isNaN(s1) || isNaN(s2)) return alert("سجل الأهداف أولاً!");
+    if (prompt("أدخل كلمة السر:") !== SECRET_KEY) return alert("كلمة سر خاطئة!");
 
-<script>
-    // ... الإعدادات السابقة ...
+    // الحصول على التاريخ الميلادي الحالي
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
 
-    function confirmMatch(rIdx, mIdx) {
-        const s1 = parseInt(document.getElementById(`s1-${rIdx}-${mIdx}`).value);
-        const s2 = parseInt(document.getElementById(`s2-${rIdx}-${mIdx}`).value);
-        if (isNaN(s1) || isNaN(s2)) return alert("سجل الأهداف أولاً!");
-        if (prompt("أدخل كلمة السر:") !== SECRET_KEY) return alert("كلمة سر خاطئة!");
-
-        // التعديل هنا: استخدام تنسيق إنجليزي (ميلادي وأرقام إنجليزية)
-        const now = new Date();
-        const timeOptions = { 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            hour12: true 
-        };
-        const dateOptions = { 
-            day: '2-digit', 
-            month: '2-digit', 
-            year: 'numeric' 
-        };
-
-        const timeString = now.toLocaleTimeString('en-GB', timeOptions);
-        const dateString = now.toLocaleDateString('en-GB', dateOptions);
-        const finalStamp = `${timeString} | ${dateString}`;
-
-        db.ref(`league/${rIdx}/${mIdx}`).update({ 
-            s1: s1, 
-            s2: s2, 
-            confirmed: true,
-            time: finalStamp 
-        });
-    }
-
-    // ... باقي الدوال (renderAll, updateStandingsUI, addNewRound) تبقى كما هي ...
-</script>
+    // إرسال النتيجة مع التاريخ إلى Firebase
+    db.ref(`league/${rIdx}/${mIdx}`).update({ 
+        s1, 
+        s2, 
+        confirmed: true,
+        date: dateStr // إضافة حقل التاريخ
+    });
+}
