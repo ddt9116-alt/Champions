@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دوري الأساطير - النسخة الكاملة</title>
+    <title>دوري الأساطير - المطور</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
@@ -42,12 +42,15 @@
         .score-box { background: #0f172a; border: 1px solid var(--border); border-radius: 10px; height: 40px; }
         .score-in { width: 100%; height: 100%; background: transparent; border: none; color: white; text-align: center; font-size: 1.1rem; font-weight: bold; outline: none; }
         
-        .confirm-btn { width: 100%; margin-top: 10px; padding: 10px; border: none; border-radius: 10px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; }
+        .btn { width: 100%; margin-top: 10px; padding: 10px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
+        .btn-admin { background: var(--primary); }
+        .btn-player { background: var(--success); }
+        .btn:active { transform: scale(0.98); }
+
         .waiting-badge { background: var(--wait); color: #000; padding: 5px; border-radius: 8px; font-size: 0.7rem; margin-top: 8px; text-align: center; display: block; font-weight: bold; }
         .success-badge { background: var(--success); color: white; padding: 5px; border-radius: 8px; font-size: 0.7rem; margin-top: 8px; text-align: center; display: block; font-weight: bold; }
 
         .btn-new { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 20px; }
-        .btn-new:disabled { opacity: 0.3; }
         .round-title { margin: 20px 0 10px; font-weight: bold; color: var(--primary); font-size: 0.9rem; }
     </style>
 </head>
@@ -72,17 +75,12 @@
     </div>
 
     <div class="section-card">
-        <h3>🔝 أكبر 5 انتصارات</h3>
-        <div id="top-wins-container"></div>
-    </div>
-
-    <div class="section-card">
         <h3>سجل المواجهات المباشرة</h3>
         <div id="h2h-container"></div>
     </div>
 
     <div id="rounds-list"></div>
-    <button id="add-round-btn" class="btn-new" onclick="addNewRound()">+ افتح جولة جديدة</button>
+    <button id="add-round-btn" class="btn-new" onclick="addNewRound()">+ افتح جولة جديدة (الأدمن)</button>
 </div>
 
 <script>
@@ -98,8 +96,14 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const players = ["أحمد", "مشعل", "فيصل"];
-    const PLAYER_KEYS = { "أحمد": "1111", "مشعل": "2222", "فيصل": "3333" };
+
+    // كلمات السر المحدثة
+    const ADMIN_KEY = "algm";
+    const PLAYER_KEYS = { 
+        "أحمد": "6175", 
+        "مشعل": "7275", 
+        "فيصل": "7379" 
+    };
 
     db.ref('league').on('value', (snapshot) => {
         const data = snapshot.val() || [];
@@ -108,9 +112,9 @@
 
     function renderAll(roundsData) {
         let stats = {};
+        const players = ["أحمد", "مشعل", "فيصل"];
         players.forEach(p => stats[p] = { played: 0, gf: 0, ga: 0, pts: 0, currentStreak: 0, stars: { bronze: 0, silver: 0, gold: 0, legendary: 0 } });
         let h2h = { "أحمد_مشعل": { p1: 0, p2: 0 }, "أحمد_فيصل": { p1: 0, p2: 0 }, "مشعل_فيصل": { p1: 0, p2: 0 } };
-        let allConfirmedMatches = [];
 
         const container = document.getElementById('rounds-list');
         container.innerHTML = '';
@@ -136,7 +140,6 @@
                         if (m.s1 > m.s2) m.p1 === key.split('_')[0] ? h2h[key].p1++ : h2h[key].p2++;
                         else if (m.s2 > m.s1) m.p2 === key.split('_')[1] ? h2h[key].p2++ : h2h[key].p1++;
                     }
-                    allConfirmedMatches.push({ p1: m.p1, p2: m.p2, s1: m.s1, s2: m.s2, diff: Math.abs(m.s1 - m.s2) });
                 }
 
                 roundHTML += `
@@ -148,33 +151,40 @@
                         <div class="score-box"><input type="number" class="score-in" id="s2-${rIdx}-${mIdx}" value="${m.s2??''}" ${isFullConfirmed?'disabled':''}></div>
                         <span style="color:${isP2Approved?'#10b981':''}">${m.p2}</span>
                     </div>
-                    ${!isFullConfirmed ? `<button class="confirm-btn" onclick="approveMatch(${rIdx}, ${mIdx})">موافقة واعتماد</button>` : `<div class="success-badge">✅ تم الإجماع (موافق ${m.p1} + ${m.p2})</div>`}
-                    ${!isFullConfirmed && (isP1Approved || isP2Approved) ? `<div class="waiting-badge">بانتظار موافقة ${!isP1Approved?m.p1:m.p2} ...</div>` : ''}
+                    ${!m.adminSet ? 
+                        `<button class="btn btn-admin" onclick="adminSetResult(${rIdx}, ${mIdx})">تسجيل النتيجة (الأدمن)</button>` : 
+                        (!isFullConfirmed ? `<button class="btn btn-player" onclick="playerApprove(${rIdx}, ${mIdx})">أوافق على النتيجة (لاعب)</button>` : `<div class="success-badge">✅ تم الاعتماد النهائي</div>`)
+                    }
+                    ${m.adminSet && !isFullConfirmed ? `<div class="waiting-badge">بانتظار موافقة: ${!isP1Approved?m.p1:''} ${!isP1Approved && !isP2Approved?'و':''} ${!isP2Approved?m.p2:''}</div>` : ''}
                 </div>`;
             });
             container.innerHTML += roundHTML;
         });
-
         updateStandingsUI(stats);
         updateH2HUI(h2h);
-        allConfirmedMatches.sort((a, b) => b.diff - a.diff || (b.s1 + b.s2) - (a.s1 + a.s2));
-        updateTopWinsUI(allConfirmedMatches.slice(0, 5));
     }
 
-    function approveMatch(rIdx, mIdx) {
+    function adminSetResult(rIdx, mIdx) {
         const s1 = parseInt(document.getElementById(`s1-${rIdx}-${mIdx}`).value);
         const s2 = parseInt(document.getElementById(`s2-${rIdx}-${mIdx}`).value);
         if (isNaN(s1) || isNaN(s2)) return alert("⚠️ أدخل النتيجة أولاً!");
+        const pass = prompt("أدخل كلمة سر الأدمن:");
+        if (pass === ADMIN_KEY) {
+            db.ref(`league/${rIdx}/${mIdx}`).update({ s1, s2, adminSet: true });
+        } else { alert("❌ كلمة السر خاطئة!"); }
+    }
+
+    function playerApprove(rIdx, mIdx) {
         db.ref(`league/${rIdx}/${mIdx}`).once('value', (snap) => {
             const m = snap.val();
-            const pass = prompt(`أدخل كلمة سر (${m.p1}) أو (${m.p2}) لاعتماد ${s1}-${s2}:`);
+            const pass = prompt(`أدخل كلمة سرك الشخصية للموافقة على نتيجة (${m.s1}-${m.s2}):`);
             if (!pass) return;
-            let playerApproved = (pass === PLAYER_KEYS[m.p1]) ? m.p1 : (pass === PLAYER_KEYS[m.p2]) ? m.p2 : null;
-            if (playerApproved) {
-                let updates = { s1: s1, s2: s2 };
-                updates[`approvals/${playerApproved}`] = true;
+            let player = (pass === PLAYER_KEYS[m.p1]) ? m.p1 : (pass === PLAYER_KEYS[m.p2]) ? m.p2 : null;
+            if (player) {
+                let updates = {};
+                updates[`approvals/${player}`] = true;
                 db.ref(`league/${rIdx}/${mIdx}`).update(updates);
-            } else { alert("❌ كلمة السر خاطئة!"); }
+            } else { alert("❌ كلمة السر غير صحيحة أو لا تخصك!"); }
         });
     }
 
@@ -195,9 +205,9 @@
             tbody.innerHTML += `<tr class="${i===0?'rank-1':''}">
                 <td style="text-align:right;">
                     <div style="display:flex; align-items:center;"><span>${p.name}</span>${getStarsHTML(p.stars)}</div>
-                    <div class="streak-fire">${p.currentStreak > 0 ? '🔥 فوز متتالي: ' + p.currentStreak : ''}</div>
+                    <div class="streak-fire">${p.currentStreak > 0 ? '🔥 فوز: ' + p.currentStreak : ''}</div>
                 </td>
-                <td>${p.played}</td><td>${p.gf - p.ga}</td><td style="color:var(--primary)">${p.pts}</td>
+                <td>${p.played}</td><td>${p.gf-p.ga}</td><td style="color:var(--primary)">${p.pts}</td>
             </tr>`;
         });
     }
@@ -226,21 +236,15 @@
         }
     }
 
-    function updateTopWinsUI(topMatches) {
-        const container = document.getElementById('top-wins-container');
-        container.innerHTML = topMatches.length === 0 ? '<div style="text-align:center; color:var(--text-dim); font-size:0.8rem;">لا توجد نتائج معتمدة</div>' : '';
-        topMatches.forEach((m, i) => {
-            container.innerHTML += `<div class="h2h-row"><span style="color:var(--gold); font-size:0.7rem; width:20px;">#${i+1}</span><span style="flex:1; text-align:right;">${m.p1}</span><div class="h2h-score" style="background:var(--bg); border:none; margin: 0 10px;">${m.s1} - ${m.s2}</div><span style="flex:1; text-align:left;">${m.p2}</span></div>`;
-        });
-    }
-
     function addNewRound() {
+        const pass = prompt("أدخل كلمة سر الأدمن لفتح جولة:");
+        if (pass !== ADMIN_KEY) return alert("❌ خطأ!");
         db.ref('league').once('value', (snap) => {
             const data = snap.val() || [];
             data.push([
-                { p1: "أحمد", p2: "مشعل", s1: null, s2: null, approvals: { "أحمد": false, "مشعل": false } },
-                { p1: "مشعل", p2: "فيصل", s1: null, s2: null, approvals: { "مشعل": false, "فيصل": false } },
-                { p1: "فيصل", p2: "أحمد", s1: null, s2: null, approvals: { "فيصل": false, "أحمد": false } }
+                { p1: "أحمد", p2: "مشعل", s1: null, s2: null, adminSet: false, approvals: { "أحمد": false, "مشعل": false } },
+                { p1: "مشعل", p2: "فيصل", s1: null, s2: null, adminSet: false, approvals: { "مشعل": false, "فيصل": false } },
+                { p1: "فيصل", p2: "أحمد", s1: null, s2: null, adminSet: false, approvals: { "فيصل": false, "أحمد": false } }
             ]);
             db.ref('league').set(data);
         });
