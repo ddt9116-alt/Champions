@@ -50,8 +50,7 @@
         
         .btn { width: 100%; margin-top: 10px; padding: 10px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
         .btn-admin { background: var(--primary); }
-        /* زر الموافقة باللون الأحمر */
-        .btn-player { background: var(--danger); flex: 1; margin-top: 5px; }
+        .btn-player { background: var(--danger); flex: 1; margin-top: 5px; font-size: 0.8rem; }
         .btn:active { transform: scale(0.98); }
         .btn:disabled { background: #475569; cursor: not-allowed; opacity: 0.6; }
 
@@ -62,7 +61,7 @@
         .btn-toggle { background: var(--border); color: var(--text-main); border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.7rem; }
         
         .locked-round { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
-        .approval-btns-container { display: flex; gap: 8px; }
+        .approval-btns-container { display: flex; gap: 8px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -183,8 +182,8 @@
                         `<button class="btn btn-admin" onclick="adminSetResult(${rIdx}, ${mIdx})" ${!isPreviousComplete?'disabled':''}>تسجيل النتيجة (الأدمن)</button>` : 
                         (!isFullConfirmed ? 
                             `<div class="approval-btns-container">
-                                ${!isP1Approved ? `<button class="btn btn-player" onclick="playerApprove(${rIdx}, ${mIdx})">موافقة (${m.p1})</button>` : ''}
-                                ${!isP2Approved ? `<button class="btn btn-player" onclick="playerApprove(${rIdx}, ${mIdx})">موافقة (${m.p2})</button>` : ''}
+                                ${!isP1Approved ? `<button class="btn btn-player" onclick="playerApprove(${rIdx}, ${mIdx}, '${m.p1}')">موافقة ${m.p1}</button>` : ''}
+                                ${!isP2Approved ? `<button class="btn btn-player" onclick="playerApprove(${rIdx}, ${mIdx}, '${m.p2}')">موافقة ${m.p2}</button>` : ''}
                             </div>` 
                             : `<div class="success-badge">✅ تم الاعتماد النهائي</div>`)
                     }
@@ -201,7 +200,6 @@
         updateH2HUI(h2h);
     }
 
-    // باقي الدوال كما هي دون أي تغيير لضمان سلامة البيانات
     function updateTopScoresUI(matches) {
         const topBody = document.getElementById('top-scores-body');
         const wins = matches.filter(m => m.s1 !== m.s2);
@@ -236,14 +234,17 @@
         else alert("❌ كلمة السر خاطئة!");
     }
 
-    function playerApprove(rIdx, mIdx) {
+    function playerApprove(rIdx, mIdx, playerName) {
         db.ref(`league/${rIdx}/${mIdx}`).once('value', (snap) => {
             const m = snap.val();
-            const pass = prompt(`أدخل كلمة سرك الشخصية للموافقة على نتيجة (${m.s1}-${m.s2}):`);
+            const pass = prompt(`اللاعب ${playerName}: أدخل كلمة السر الخاصة بك للموافقة على نتيجة (${m.s1}-${m.s2}):`);
             if (!pass) return;
-            let player = (pass === PLAYER_KEYS[m.p1]) ? m.p1 : (pass === PLAYER_KEYS[m.p2]) ? m.p2 : null;
-            if (player) db.ref(`league/${rIdx}/${mIdx}/approvals/${player}`).set(true);
-            else alert("❌ كلمة السر غير صحيحة!");
+            
+            if (pass === PLAYER_KEYS[playerName]) {
+                db.ref(`league/${rIdx}/${mIdx}/approvals/${playerName}`).set(true);
+            } else {
+                alert(`❌ كلمة السر غير صحيحة للاعب ${playerName}`);
+            }
         });
     }
 
