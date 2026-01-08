@@ -53,6 +53,8 @@
         .score-box { background: #0f172a; border: 1px solid var(--border); border-radius: 10px; height: 40px; }
         .score-in { width: 100%; height: 100%; background: transparent; border: none; color: white !important; text-align: center; font-size: 1.1rem; font-weight: bold; outline: none; }
         
+        .match-date { text-align: center; font-size: 0.65rem; color: var(--text-dim); margin-top: 8px; display: block; letter-spacing: 0.5px; }
+
         .btn { width: 100%; margin-top: 10px; padding: 10px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; color: white; }
         .btn-admin { background: var(--primary); }
         .btn-player { background: var(--danger); flex: 1; margin-top: 5px; font-size: 0.8rem; }
@@ -199,6 +201,7 @@
                         <div class="score-box"><input type="number" class="score-in" id="s2-${rIdx}-${mIdx}" value="${m.s2??''}" ${isFullConfirmed || (!isPreviousComplete && !isRoundFinished) ?'disabled':''}></div>
                         <span class="${m.p2 === loggedInUser ? 'highlight-me' : ''}">${m.p2}</span>
                     </div>
+                    ${m.date ? `<span class="match-date">${m.date}</span>` : ''}
                     ${!m.adminSet ? 
                         `<button class="btn btn-admin" onclick="adminSetResult(${rIdx}, ${mIdx})" ${!isPreviousComplete && !isRoundFinished ?'disabled':''}>تسجيل النتيجة</button>` : 
                         (!isFullConfirmed ? 
@@ -223,17 +226,12 @@
 
     function updateStandingsUI(stats) {
         const sorted = Object.keys(stats).map(name => ({ name, ...stats[name] })).sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga));
-        
-        // تحديد أعلى عدد أهداف تم تسجيله
         const maxGoals = Math.max(...sorted.map(p => p.gf));
-
         const tbody = document.getElementById('standings-body');
         tbody.innerHTML = '';
         sorted.forEach((p, i) => {
             const isMe = p.name === loggedInUser;
-            // شرط ظهور الكورة: أن يكون أهدافه هي الأعلى وأكبر من صفر
             const isTopScorer = p.gf === maxGoals && maxGoals > 0;
-
             tbody.innerHTML += `<tr class="${i===0?'rank-1':''}">
                 <td style="text-align:right;">
                     <div style="display:flex; align-items:center;">
@@ -285,7 +283,11 @@
         const s2 = parseInt(document.getElementById(`s2-${rIdx}-${mIdx}`).value);
         if (isNaN(s1) || isNaN(s2)) return alert("⚠️ أدخل النتيجة أولاً!");
         const pass = prompt("أدخل كلمة سر الأدمن:");
-        if (pass === ADMIN_KEY) db.ref(`league/${rIdx}/${mIdx}`).update({ s1, s2, adminSet: true });
+        if (pass === ADMIN_KEY) {
+            const now = new Date();
+            const dateStr = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
+            db.ref(`league/${rIdx}/${mIdx}`).update({ s1, s2, adminSet: true, date: dateStr });
+        }
         else alert("❌ كلمة السر خاطئة!");
     }
 
