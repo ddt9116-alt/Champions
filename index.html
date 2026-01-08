@@ -11,7 +11,7 @@
         :root { 
             --bg: #0f172a; --card-bg: #1e293b; --primary: #3b82f6; 
             --success: #10b981; --text-main: #f8fafc; --text-dim: #94a3b8; 
-            --border: #334155; --danger: #ef4444; --gold: #fbbf24; --wait: #f59e0b;
+            --border: #334155; --danger: #ef4444; --gold: #fbbf24;
         }
 
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--bg); color: var(--text-main); padding: 15px; margin: 0; }
@@ -28,7 +28,6 @@
         .standings-table th { color: var(--text-dim); font-size: 0.75rem; padding-bottom: 10px; }
         .standings-table td { padding: 12px 5px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-main); }
         
-        /* المركز الأول خلفية فقط بدون تغيير لون الخط */
         .rank-1 { background: rgba(251, 191, 36, 0.05); }
 
         .top-scores-list { list-style: none; padding: 0; margin: 0; }
@@ -45,31 +44,30 @@
         .h2h-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
         .h2h-score { background: #0f172a; padding: 4px 12px; border-radius: 20px; color: var(--primary); font-weight: 800; border: 1px solid var(--border); min-width: 45px; text-align: center; }
 
-        .match-card { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 15px; margin-bottom: 10px; transition: 0.3s; }
+        .match-card { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 15px; margin-bottom: 10px; }
         .match-row { display: grid; grid-template-columns: 1fr 45px 15px 45px 1fr; align-items: center; gap: 8px; }
         .score-box { background: #0f172a; border: 1px solid var(--border); border-radius: 10px; height: 40px; }
         .score-in { width: 100%; height: 100%; background: transparent; border: none; color: white; text-align: center; font-size: 1.1rem; font-weight: bold; outline: none; }
         
-        .btn { width: 100%; margin-top: 10px; padding: 10px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
+        .btn { width: 100%; margin-top: 10px; padding: 10px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; color: white; }
         .btn-admin { background: var(--primary); }
         .btn-player { background: var(--danger); flex: 1; margin-top: 5px; font-size: 0.8rem; }
-        .btn:active { transform: scale(0.98); }
-        .btn:disabled { background: #475569; cursor: not-allowed; opacity: 0.6; }
 
         .success-badge { background: var(--success); color: white; padding: 5px; border-radius: 8px; font-size: 0.7rem; margin-top: 8px; text-align: center; display: block; font-weight: bold; }
 
-        .btn-new { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 20px; transition: 0.3s; }
+        .btn-new { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 20px; }
         .round-title { margin: 20px 0 10px; font-weight: bold; color: var(--primary); font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; }
         .btn-toggle { background: var(--border); color: var(--text-main); border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.7rem; }
         
         .locked-round { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
         .approval-btns-container { display: flex; gap: 8px; margin-top: 10px; }
         
-        /* ميزة التمييز: الذهبي فقط للاعب صاحب الرابط */
+        /* التعديل الأخير: اللون الأحمر للاعب صاحب الرابط */
         .highlight-me { 
-            color: var(--gold) !important; 
-            text-shadow: 0 0 8px rgba(251, 191, 36, 0.5); 
+            color: #ef4444 !important; 
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.4); 
             font-size: 1.05rem;
+            font-weight: 900;
         }
         
         #user-welcome { text-align: center; font-size: 0.85rem; color: var(--success); margin-bottom: 10px; font-weight: bold; min-height: 20px; }
@@ -111,6 +109,7 @@
 </div>
 
 <script>
+    // إعدادات Firebase الخاصة بك
     const firebaseConfig = {
         apiKey: "AIzaSyA_s2HoKKxwXELNHEmti_RsvA_nP6fmWP8",
         authDomain: "nhffbjhh.firebaseapp.com",
@@ -127,12 +126,13 @@
     const ADMIN_KEY = "Algm";
     const PLAYER_KEYS = { "أحمد": "6175", "مشعل": "7275", "فيصل": "7379" };
 
+    // استخراج هوية اللاعب من الرابط
     const urlParams = new URLSearchParams(window.location.search);
     const rawId = urlParams.get('id');
     const loggedInUser = rawId ? decodeURIComponent(rawId) : null;
 
     if (loggedInUser && PLAYER_KEYS[loggedInUser]) {
-        document.getElementById('user-welcome').innerText = `مرحباً ${loggedInUser}، تم تمييز اسمك في القوائم ✅`;
+        document.getElementById('user-welcome').innerText = `أهلاً بك يا ${loggedInUser}! تم تمييزك باللون الأحمر ❤️`;
     }
 
     db.ref('league').on('value', (snapshot) => {
