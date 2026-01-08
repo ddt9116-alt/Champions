@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دوري الأساطير - النسخة الذكية</title>
+    <title>دوري الأساطير - النسخة المحدثة</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
@@ -62,7 +62,9 @@
         
         .locked-round { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
         .approval-btns-container { display: flex; gap: 8px; margin-top: 10px; }
-        #user-welcome { text-align: center; font-size: 0.8rem; color: var(--success); margin-bottom: 10px; font-weight: bold; }
+        
+        /* تنسيق رسالة الترحيب */
+        #user-welcome { text-align: center; font-size: 0.85rem; color: var(--success); margin-bottom: 10px; font-weight: bold; min-height: 20px; }
     </style>
 </head>
 <body>
@@ -117,12 +119,13 @@
     const ADMIN_KEY = "Algm";
     const PLAYER_KEYS = { "أحمد": "6175", "مشعل": "7275", "فيصل": "7379" };
 
-    // --- نظام التعرف على اللاعب من الرابط ---
+    // --- نظام استخراج هوية اللاعب من الرابط بشكل صحيح ---
     const urlParams = new URLSearchParams(window.location.search);
-    const loggedInUser = urlParams.get('id'); // سيبحث عن ?id=فيصل مثلاً
+    const rawId = urlParams.get('id');
+    const loggedInUser = rawId ? decodeURIComponent(rawId) : null;
 
     if (loggedInUser && PLAYER_KEYS[loggedInUser]) {
-        document.getElementById('user-welcome').innerText = `مرحباً بك يا ${loggedInUser}، يمكنك الاعتماد مباشرة ✅`;
+        document.getElementById('user-welcome').innerText = `مرحباً ${loggedInUser}، يمكنك الاعتماد بضغطة زر ✅`;
     }
 
     db.ref('league').on('value', (snapshot) => {
@@ -210,7 +213,6 @@
         updateH2HUI(h2h);
     }
 
-    // باقي الدوال (UpdateUI, applyWin, إلخ) بقيت كما هي لضمان عمل الكود
     function updateTopScoresUI(matches) {
         const topBody = document.getElementById('top-scores-body');
         const wins = matches.filter(m => m.s1 !== m.s2);
@@ -245,24 +247,23 @@
         else alert("❌ كلمة السر خاطئة!");
     }
 
-    // --- تعديل دالة الموافقة لتكون ذكية ---
+    // --- دالة الموافقة الذكية ---
     function playerApprove(rIdx, mIdx, playerName) {
-        // إذا كان اللاعب هو صاحب الرابط، يوافق فوراً
+        // إذا كان الشخص هو صاحب الرابط، يوافق فوراً بدون كلمة سر
         if (loggedInUser === playerName) {
             db.ref(`league/${rIdx}/${mIdx}/approvals/${playerName}`).set(true);
             return;
         }
 
-        // إذا لم يكن صاحب الرابط، يطلب كلمة السر (الطريقة القديمة)
-        db.ref(`league/${rIdx}/${mIdx}`).once('value', (snap) => {
-            const m = snap.val();
-            const pass = prompt(`اللاعب ${playerName}: أدخل كلمة السر الخاصة بك للموافقة:`);
-            if (pass === PLAYER_KEYS[playerName]) {
-                db.ref(`league/${rIdx}/${mIdx}/approvals/${playerName}`).set(true);
-            } else if (pass) {
-                alert(`❌ كلمة السر غير صحيحة`);
-            }
-        });
+        // إذا لم يكن صاحب الرابط، يطلب كلمة السر (كخيار يدوي احتياطي)
+        const pass = prompt(`اللاعب ${playerName}: أدخل كلمة السر الخاصة بك للموافقة:`);
+        if (!pass) return;
+        
+        if (pass === PLAYER_KEYS[playerName]) {
+            db.ref(`league/${rIdx}/${mIdx}/approvals/${playerName}`).set(true);
+        } else {
+            alert(`❌ كلمة السر غير صحيحة`);
+        }
     }
 
     function applyWin(stats, winner, loser) {
