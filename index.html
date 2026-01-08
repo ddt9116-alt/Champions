@@ -50,7 +50,8 @@
         
         .btn { width: 100%; margin-top: 10px; padding: 10px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
         .btn-admin { background: var(--primary); }
-        .btn-player { background: var(--success); }
+        /* زر الموافقة باللون الأحمر */
+        .btn-player { background: var(--danger); flex: 1; margin-top: 5px; }
         .btn:active { transform: scale(0.98); }
         .btn:disabled { background: #475569; cursor: not-allowed; opacity: 0.6; }
 
@@ -61,6 +62,7 @@
         .btn-toggle { background: var(--border); color: var(--text-main); border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.7rem; }
         
         .locked-round { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
+        .approval-btns-container { display: flex; gap: 8px; }
     </style>
 </head>
 <body>
@@ -179,7 +181,12 @@
                     </div>
                     ${!m.adminSet ? 
                         `<button class="btn btn-admin" onclick="adminSetResult(${rIdx}, ${mIdx})" ${!isPreviousComplete?'disabled':''}>تسجيل النتيجة (الأدمن)</button>` : 
-                        (!isFullConfirmed ? `<button class="btn btn-player" onclick="playerApprove(${rIdx}, ${mIdx})">أوافق على النتيجة (لاعب)</button>` : `<div class="success-badge">✅ تم الاعتماد النهائي</div>`)
+                        (!isFullConfirmed ? 
+                            `<div class="approval-btns-container">
+                                ${!isP1Approved ? `<button class="btn btn-player" onclick="playerApprove(${rIdx}, ${mIdx})">موافقة (${m.p1})</button>` : ''}
+                                ${!isP2Approved ? `<button class="btn btn-player" onclick="playerApprove(${rIdx}, ${mIdx})">موافقة (${m.p2})</button>` : ''}
+                            </div>` 
+                            : `<div class="success-badge">✅ تم الاعتماد النهائي</div>`)
                     }
                 </div>`;
             });
@@ -194,40 +201,24 @@
         updateH2HUI(h2h);
     }
 
+    // باقي الدوال كما هي دون أي تغيير لضمان سلامة البيانات
     function updateTopScoresUI(matches) {
         const topBody = document.getElementById('top-scores-body');
         const wins = matches.filter(m => m.s1 !== m.s2);
         const groupedMatches = {};
-
         wins.forEach(m => {
             let winner, loser, winS, loseS;
-            if (m.s1 > m.s2) {
-                winner = m.p1; winS = m.s1; loser = m.p2; loseS = m.s2;
-            } else {
-                winner = m.p2; winS = m.s2; loser = m.p1; loseS = m.s1;
-            }
-            // إنشاء مفتاح فريد: الفائز_الخاسر_النتيجة
+            if (m.s1 > m.s2) { winner = m.p1; winS = m.s1; loser = m.p2; loseS = m.s2; } 
+            else { winner = m.p2; winS = m.s2; loser = m.p1; loseS = m.s1; }
             const key = `${winner}_${loser}_${winS}_${loseS}`;
-            if (groupedMatches[key]) {
-                groupedMatches[key].count++;
-            } else {
-                groupedMatches[key] = { winner, loser, winS, loseS, diff: winS - loseS, total: winS + loseS, count: 1 };
-            }
+            if (groupedMatches[key]) groupedMatches[key].count++;
+            else groupedMatches[key] = { winner, loser, winS, loseS, diff: winS - loseS, total: winS + loseS, count: 1 };
         });
-
-        const sorted = Object.values(groupedMatches)
-            .sort((a, b) => b.diff - a.diff || b.total - a.total)
-            .slice(0, 5);
-
+        const sorted = Object.values(groupedMatches).sort((a, b) => b.diff - a.diff || b.total - a.total).slice(0, 5);
         topBody.innerHTML = sorted.length ? '' : '<li style="font-size:0.7rem; color:var(--text-dim)">لا توجد نتائج فوز معتمدة بعد</li>';
-        
         sorted.forEach(m => {
             const countBadge = m.count > 1 ? `<span class="count-badge">x${m.count}</span>` : '';
-            topBody.innerHTML += `
-                <li class="top-score-item">
-                    <span class="ts-players"><b>${m.winner}</b> <small>ضد</small> ${m.loser} ${countBadge}</span>
-                    <span class="ts-result">${m.winS} - ${m.loseS}</span>
-                </li>`;
+            topBody.innerHTML += `<li class="top-score-item"><span class="ts-players"><b>${m.winner}</b> <small>ضد</small> ${m.loser} ${countBadge}</span><span class="ts-result">${m.winS} - ${m.loseS}</span></li>`;
         });
     }
 
@@ -241,9 +232,8 @@
         const s2 = parseInt(document.getElementById(`s2-${rIdx}-${mIdx}`).value);
         if (isNaN(s1) || isNaN(s2)) return alert("⚠️ أدخل النتيجة أولاً!");
         const pass = prompt("أدخل كلمة سر الأدمن:");
-        if (pass === ADMIN_KEY) {
-            db.ref(`league/${rIdx}/${mIdx}`).update({ s1, s2, adminSet: true });
-        } else { alert("❌ كلمة السر خاطئة!"); }
+        if (pass === ADMIN_KEY) db.ref(`league/${rIdx}/${mIdx}`).update({ s1, s2, adminSet: true });
+        else alert("❌ كلمة السر خاطئة!");
     }
 
     function playerApprove(rIdx, mIdx) {
@@ -252,9 +242,8 @@
             const pass = prompt(`أدخل كلمة سرك الشخصية للموافقة على نتيجة (${m.s1}-${m.s2}):`);
             if (!pass) return;
             let player = (pass === PLAYER_KEYS[m.p1]) ? m.p1 : (pass === PLAYER_KEYS[m.p2]) ? m.p2 : null;
-            if (player) {
-                db.ref(`league/${rIdx}/${mIdx}/approvals/${player}`).set(true);
-            } else { alert("❌ كلمة السر غير صحيحة!"); }
+            if (player) db.ref(`league/${rIdx}/${mIdx}/approvals/${player}`).set(true);
+            else alert("❌ كلمة السر غير صحيحة!");
         });
     }
 
@@ -273,10 +262,7 @@
         tbody.innerHTML = '';
         sorted.forEach((p, i) => {
             tbody.innerHTML += `<tr class="${i===0?'rank-1':''}">
-                <td style="text-align:right;">
-                    <div style="display:flex; align-items:center;"><span>${p.name}</span>${getStarsHTML(p.stars)}</div>
-                    <div class="streak-fire">${p.currentStreak > 0 ? '🔥 فوز: ' + p.currentStreak : ''}</div>
-                </td>
+                <td style="text-align:right;"><div style="display:flex; align-items:center;"><span>${p.name}</span>${getStarsHTML(p.stars)}</div><div class="streak-fire">${p.currentStreak > 0 ? '🔥 فوز: ' + p.currentStreak : ''}</div></td>
                 <td>${p.played}</td><td>${p.gf-p.ga}</td><td style="color:var(--primary)">${p.pts}</td>
             </tr>`;
         });
@@ -322,4 +308,3 @@
 </script>
 </body>
 </html>
-
