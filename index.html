@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دوري الأساطير - النسخة المخصصة</title>
+    <title>دوري الأساطير - النسخة المعتمدة</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
@@ -12,7 +12,6 @@
             --bg: #0f172a; --card-bg: #1e293b; --primary: #3b82f6; 
             --success: #10b981; --text-main: #f8fafc; --text-dim: #94a3b8; 
             --border: #334155; --danger: #ef4444; --gold: #fbbf24; --wait: #f59e0b;
-            --highlight: #60a5fa; /* لون تمييز اسم اللاعب */
         }
 
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--bg); color: var(--text-main); padding: 15px; margin: 0; }
@@ -27,7 +26,9 @@
 
         .standings-table { width: 100%; border-collapse: collapse; text-align: center; }
         .standings-table th { color: var(--text-dim); font-size: 0.75rem; padding-bottom: 10px; }
-        .standings-table td { padding: 12px 5px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .standings-table td { padding: 12px 5px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-main); }
+        
+        /* المركز الأول خلفية فقط بدون تغيير لون الخط */
         .rank-1 { background: rgba(251, 191, 36, 0.05); }
 
         .top-scores-list { list-style: none; padding: 0; margin: 0; }
@@ -64,8 +65,13 @@
         .locked-round { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
         .approval-btns-container { display: flex; gap: 8px; margin-top: 10px; }
         
-        /* كلاس التمييز الجديد */
-        .highlight-me { color: var(--gold) !important; text-shadow: 0 0 5px rgba(251, 191, 36, 0.4); }
+        /* ميزة التمييز: الذهبي فقط للاعب صاحب الرابط */
+        .highlight-me { 
+            color: var(--gold) !important; 
+            text-shadow: 0 0 8px rgba(251, 191, 36, 0.5); 
+            font-size: 1.05rem;
+        }
+        
         #user-welcome { text-align: center; font-size: 0.85rem; color: var(--success); margin-bottom: 10px; font-weight: bold; min-height: 20px; }
     </style>
 </head>
@@ -230,10 +236,8 @@
         topBody.innerHTML = sorted.length ? '' : '<li style="font-size:0.7rem; color:var(--text-dim)">لا توجد نتائج فوز معتمدة بعد</li>';
         sorted.forEach(m => {
             const countBadge = m.count > 1 ? `<span class="count-badge">x${m.count}</span>` : '';
-            // تمييز الأسماء داخل القائمة
             const wName = m.winner === loggedInUser ? `<b class="highlight-me">${m.winner}</b>` : `<b>${m.winner}</b>`;
             const lName = m.loser === loggedInUser ? `<span class="highlight-me">${m.loser}</span>` : m.loser;
-            
             topBody.innerHTML += `<li class="top-score-item"><span class="ts-players">${wName} <small>ضد</small> ${lName} ${countBadge}</span><span class="ts-result">${m.winS} - ${m.loseS}</span></li>`;
         });
     }
