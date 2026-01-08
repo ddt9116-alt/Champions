@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دوري الأساطير - النسخة المعتمدة</title>
+    <title>دوري الأساطير</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
@@ -26,14 +26,22 @@
 
         .standings-table { width: 100%; border-collapse: collapse; text-align: center; }
         .standings-table th { color: var(--text-dim); font-size: 0.75rem; padding-bottom: 10px; }
-        .standings-table td { padding: 12px 5px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-main); }
+        
+        /* توحيد الأرقام للون الأبيض في الجدول */
+        .standings-table td { padding: 12px 5px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.05); color: #ffffff !important; }
         
         .rank-1 { background: rgba(251, 191, 36, 0.05); }
+
+        /* توحيد الأرقام للون الأبيض في أكبر 5 نتائج */
+        .ts-result { color: #ffffff !important; font-weight: bold; }
+        
+        /* توحيد الأرقام للون الأبيض في المواجهات المباشرة */
+        .h2h-score { background: #0f172a; padding: 4px 12px; border-radius: 20px; color: #ffffff !important; font-weight: 800; border: 1px solid var(--border); min-width: 45px; text-align: center; }
 
         .top-scores-list { list-style: none; padding: 0; margin: 0; }
         .top-score-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 0.85rem; }
         .ts-players { color: var(--text-main); display: flex; align-items: center; gap: 5px; }
-        .ts-result { color: var(--gold); font-weight: bold; }
+        
         .count-badge { background: var(--primary); color: white; font-size: 0.65rem; padding: 1px 5px; border-radius: 6px; font-weight: bold; }
 
         .stars-container { display: inline-flex; gap: 8px; vertical-align: middle; margin-right: 10px; }
@@ -42,12 +50,11 @@
         .streak-fire { font-size: 0.7rem; color: #ff4500; font-weight: normal; margin-top: 2px; }
 
         .h2h-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-        .h2h-score { background: #0f172a; padding: 4px 12px; border-radius: 20px; color: var(--primary); font-weight: 800; border: 1px solid var(--border); min-width: 45px; text-align: center; }
 
         .match-card { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 15px; margin-bottom: 10px; }
         .match-row { display: grid; grid-template-columns: 1fr 45px 15px 45px 1fr; align-items: center; gap: 8px; }
         .score-box { background: #0f172a; border: 1px solid var(--border); border-radius: 10px; height: 40px; }
-        .score-in { width: 100%; height: 100%; background: transparent; border: none; color: white; text-align: center; font-size: 1.1rem; font-weight: bold; outline: none; }
+        .score-in { width: 100%; height: 100%; background: transparent; border: none; color: white !important; text-align: center; font-size: 1.1rem; font-weight: bold; outline: none; }
         
         .btn { width: 100%; margin-top: 10px; padding: 10px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; color: white; }
         .btn-admin { background: var(--primary); }
@@ -62,7 +69,7 @@
         .locked-round { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
         .approval-btns-container { display: flex; gap: 8px; margin-top: 10px; }
         
-        /* التعديل الأخير: اللون الأحمر للاعب صاحب الرابط */
+        /* تمييز اسم اللاعب باللون الأحمر */
         .highlight-me { 
             color: #ef4444 !important; 
             text-shadow: 0 0 10px rgba(239, 68, 68, 0.4); 
@@ -109,7 +116,7 @@
 </div>
 
 <script>
-    // إعدادات Firebase الخاصة بك
+    // إعداداتك الأصلية
     const firebaseConfig = {
         apiKey: "AIzaSyA_s2HoKKxwXELNHEmti_RsvA_nP6fmWP8",
         authDomain: "nhffbjhh.firebaseapp.com",
@@ -126,7 +133,6 @@
     const ADMIN_KEY = "Algm";
     const PLAYER_KEYS = { "أحمد": "6175", "مشعل": "7275", "فيصل": "7379" };
 
-    // استخراج هوية اللاعب من الرابط
     const urlParams = new URLSearchParams(window.location.search);
     const rawId = urlParams.get('id');
     const loggedInUser = rawId ? decodeURIComponent(rawId) : null;
@@ -192,14 +198,14 @@
                 roundHTML += `
                 <div class="match-card ${!isPreviousComplete && !isRoundFinished ? 'locked-round' : ''}">
                     <div class="match-row">
-                        <span class="${m.p1 === loggedInUser ? 'highlight-me' : ''}" style="color:${isP1Approved?'#10b981':''}">${m.p1}</span>
+                        <span class="${m.p1 === loggedInUser ? 'highlight-me' : ''}">${m.p1}</span>
                         <div class="score-box"><input type="number" class="score-in" id="s1-${rIdx}-${mIdx}" value="${m.s1??''}" ${isFullConfirmed || (!isPreviousComplete && !isRoundFinished) ?'disabled':''}></div>
                         <span>-</span>
                         <div class="score-box"><input type="number" class="score-in" id="s2-${rIdx}-${mIdx}" value="${m.s2??''}" ${isFullConfirmed || (!isPreviousComplete && !isRoundFinished) ?'disabled':''}></div>
-                        <span class="${m.p2 === loggedInUser ? 'highlight-me' : ''}" style="color:${isP2Approved?'#10b981':''}">${m.p2}</span>
+                        <span class="${m.p2 === loggedInUser ? 'highlight-me' : ''}">${m.p2}</span>
                     </div>
                     ${!m.adminSet ? 
-                        `<button class="btn btn-admin" onclick="adminSetResult(${rIdx}, ${mIdx})" ${!isPreviousComplete && !isRoundFinished ?'disabled':''}>تسجيل النتيجة (الأدمن)</button>` : 
+                        `<button class="btn btn-admin" onclick="adminSetResult(${rIdx}, ${mIdx})" ${!isPreviousComplete && !isRoundFinished ?'disabled':''}>تسجيل النتيجة</button>` : 
                         (!isFullConfirmed ? 
                             `<div class="approval-btns-container">
                                 ${!isP1Approved ? `<button class="btn btn-player" onclick="playerApprove(${rIdx}, ${mIdx}, '${m.p1}')">موافقة ${m.p1}</button>` : ''}
@@ -218,6 +224,19 @@
         updateStandingsUI(stats);
         updateTopScoresUI(allConfirmedMatches);
         updateH2HUI(h2h);
+    }
+
+    function updateStandingsUI(stats) {
+        const sorted = Object.keys(stats).map(name => ({ name, ...stats[name] })).sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga));
+        const tbody = document.getElementById('standings-body');
+        tbody.innerHTML = '';
+        sorted.forEach((p, i) => {
+            const isMe = p.name === loggedInUser;
+            tbody.innerHTML += `<tr class="${i===0?'rank-1':''}">
+                <td style="text-align:right;"><div style="display:flex; align-items:center;"><span class="${isMe?'highlight-me':''}">${p.name}</span>${getStarsHTML(p.stars)}</div><div class="streak-fire">${p.currentStreak > 0 ? '🔥 فوز: ' + p.currentStreak : ''}</div></td>
+                <td>${p.played}</td><td>${p.gf-p.ga}</td><td>${p.pts}</td>
+            </tr>`;
+        });
     }
 
     function updateTopScoresUI(matches) {
@@ -242,11 +261,17 @@
         });
     }
 
-    function toggleRound(idx) {
-        const box = document.getElementById(`round-box-${idx}`);
-        box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    function updateH2HUI(h2h) {
+        const container = document.getElementById('h2h-container'); container.innerHTML = '';
+        for (const key in h2h) {
+            const [p1, p2] = key.split('_');
+            const p1Class = p1 === loggedInUser ? 'highlight-me' : '';
+            const p2Class = p2 === loggedInUser ? 'highlight-me' : '';
+            container.innerHTML += `<div class="h2h-row"><span class="${p1Class}">${p1}</span><div class="h2h-score">${h2h[key].p1} - ${h2h[key].p2}</div><span class="${p2Class}">${p2}</span></div>`;
+        }
     }
 
+    // وظائف الأدمن والتحقق
     function adminSetResult(rIdx, mIdx) {
         const s1 = parseInt(document.getElementById(`s1-${rIdx}-${mIdx}`).value);
         const s2 = parseInt(document.getElementById(`s2-${rIdx}-${mIdx}`).value);
@@ -261,12 +286,9 @@
             db.ref(`league/${rIdx}/${mIdx}/approvals/${playerName}`).set(true);
             return;
         }
-        const pass = prompt(`اللاعب ${playerName}: أدخل كلمة السر الخاصة بك للموافقة:`);
-        if (pass === PLAYER_KEYS[playerName]) {
-            db.ref(`league/${rIdx}/${mIdx}/approvals/${playerName}`).set(true);
-        } else if (pass) {
-            alert(`❌ كلمة السر غير صحيحة`);
-        }
+        const pass = prompt(`اللاعب ${playerName}: أدخل كلمة السر للموافقة:`);
+        if (pass === PLAYER_KEYS[playerName]) db.ref(`league/${rIdx}/${mIdx}/approvals/${playerName}`).set(true);
+        else if (pass) alert(`❌ كلمة السر غير صحيحة`);
     }
 
     function applyWin(stats, winner, loser) {
@@ -276,19 +298,6 @@
         else if (s === 10) stats[winner].stars.silver++;
         else if (s === 15) stats[winner].stars.gold++;
         else if (s === 20) { stats[winner].stars.legendary++; stats[winner].currentStreak = 0; }
-    }
-
-    function updateStandingsUI(stats) {
-        const sorted = Object.keys(stats).map(name => ({ name, ...stats[name] })).sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga));
-        const tbody = document.getElementById('standings-body');
-        tbody.innerHTML = '';
-        sorted.forEach((p, i) => {
-            const isMe = p.name === loggedInUser;
-            tbody.innerHTML += `<tr class="${i===0?'rank-1':''}">
-                <td style="text-align:right;"><div style="display:flex; align-items:center;"><span class="${isMe?'highlight-me':''}">${p.name}</span>${getStarsHTML(p.stars)}</div><div class="streak-fire">${p.currentStreak > 0 ? '🔥 فوز: ' + p.currentStreak : ''}</div></td>
-                <td>${p.played}</td><td>${p.gf-p.ga}</td><td style="color:var(--primary)">${p.pts}</td>
-            </tr>`;
-        });
     }
 
     function getStarsHTML(stars) {
@@ -307,14 +316,9 @@
         return null;
     }
 
-    function updateH2HUI(h2h) {
-        const container = document.getElementById('h2h-container'); container.innerHTML = '';
-        for (const key in h2h) {
-            const [p1, p2] = key.split('_');
-            const p1Class = p1 === loggedInUser ? 'highlight-me' : '';
-            const p2Class = p2 === loggedInUser ? 'highlight-me' : '';
-            container.innerHTML += `<div class="h2h-row"><span class="${p1Class}">${p1}</span><div class="h2h-score">${h2h[key].p1} - ${h2h[key].p2}</div><span class="${p2Class}">${p2}</span></div>`;
-        }
+    function toggleRound(idx) {
+        const box = document.getElementById(`round-box-${idx}`);
+        box.style.display = box.style.display === 'none' ? 'block' : 'none';
     }
 
     function addNewRound() {
