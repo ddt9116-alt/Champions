@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دوري الأساطير - النسخة المعتمدة</title>
+    <title>دوري الأساطير - النسخة المحدثة</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
@@ -30,10 +30,10 @@
         .rank-1 { color: var(--gold); background: rgba(251, 191, 36, 0.05); }
 
         .top-scores-list { list-style: none; padding: 0; margin: 0; }
-        .top-score-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--border); font-size: 0.85rem; }
-        .ts-players { color: var(--text-main); }
-        .ts-result { color: var(--gold); font-weight: bold; font-size: 1rem; min-width: 50px; text-align: left; }
-        .ts-repeat-badge { background: rgba(59, 130, 246, 0.2); color: var(--primary); padding: 2px 6px; border-radius: 6px; font-size: 0.65rem; margin-right: 8px; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .top-score-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 0.85rem; }
+        .ts-players { color: var(--text-main); display: flex; align-items: center; gap: 5px; }
+        .ts-result { color: var(--gold); font-weight: bold; }
+        .count-badge { background: var(--primary); color: white; font-size: 0.65rem; padding: 1px 5px; border-radius: 6px; font-weight: bold; }
 
         .stars-container { display: inline-flex; gap: 8px; vertical-align: middle; margin-right: 10px; }
         .star-badge { position: relative; display: flex; align-items: center; font-size: 1.1rem; }
@@ -196,46 +196,38 @@
 
     function updateTopScoresUI(matches) {
         const topBody = document.getElementById('top-scores-body');
-        
-        const groups = {};
-        matches.filter(m => m.s1 !== m.s2).forEach(m => {
-            // نحدد الفائز والخاسر بوضوح
-            const winner = m.s1 > m.s2 ? m.p1 : m.p2;
-            const loser = m.s1 > m.s2 ? m.p2 : m.p1;
-            const winScore = Math.max(m.s1, m.s2);
-            const loseScore = Math.min(m.s1, m.s2);
-            
-            // المفتاح الآن يعتمد على (الفائز + الخاسر + النتيجة)
-            // هذا يمنع دمج فوز أحمد 9-0 مع فوز فيصل 9-0
-            const uniqueKey = `${winner} ضد ${loser} | ${winScore}-${loseScore}`;
-            
-            if (!groups[uniqueKey]) {
-                groups[uniqueKey] = {
-                    displayTitle: `${winner} ضد ${loser}`,
-                    displayScore: `${winScore} - ${loseScore}`,
-                    diff: winScore - loseScore,
-                    sum: winScore + loseScore,
-                    count: 1
-                };
+        const wins = matches.filter(m => m.s1 !== m.s2);
+        const groupedMatches = {};
+
+        wins.forEach(m => {
+            let winner, loser, winS, loseS;
+            if (m.s1 > m.s2) {
+                winner = m.p1; winS = m.s1; loser = m.p2; loseS = m.s2;
             } else {
-                groups[uniqueKey].count++;
+                winner = m.p2; winS = m.s2; loser = m.p1; loseS = m.s1;
+            }
+            // إنشاء مفتاح فريد: الفائز_الخاسر_النتيجة
+            const key = `${winner}_${loser}_${winS}_${loseS}`;
+            if (groupedMatches[key]) {
+                groupedMatches[key].count++;
+            } else {
+                groupedMatches[key] = { winner, loser, winS, loseS, diff: winS - loseS, total: winS + loseS, count: 1 };
             }
         });
 
-        const sorted = Object.values(groups)
-            .sort((a, b) => b.diff - a.diff || b.sum - a.sum)
+        const sorted = Object.values(groupedMatches)
+            .sort((a, b) => b.diff - a.diff || b.total - a.total)
             .slice(0, 5);
 
         topBody.innerHTML = sorted.length ? '' : '<li style="font-size:0.7rem; color:var(--text-dim)">لا توجد نتائج فوز معتمدة بعد</li>';
         
-        sorted.forEach(item => {
-            topBody.innerHTML += `<li class="top-score-item">
-                <div class="ts-players">
-                    ${item.displayTitle}
-                    ${item.count > 1 ? `<span class="ts-repeat-badge">تكررت ${item.count} مرات</span>` : ''}
-                </div>
-                <span class="ts-result">${item.displayScore}</span>
-            </li>`;
+        sorted.forEach(m => {
+            const countBadge = m.count > 1 ? `<span class="count-badge">x${m.count}</span>` : '';
+            topBody.innerHTML += `
+                <li class="top-score-item">
+                    <span class="ts-players"><b>${m.winner}</b> <small>ضد</small> ${m.loser} ${countBadge}</span>
+                    <span class="ts-result">${m.winS} - ${m.loseS}</span>
+                </li>`;
         });
     }
 
@@ -330,3 +322,4 @@
 </script>
 </body>
 </html>
+
