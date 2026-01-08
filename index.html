@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دوري الأساطير - النسخة المحدثة</title>
+    <title>دوري الأساطير - النسخة المخصصة</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
@@ -12,6 +12,7 @@
             --bg: #0f172a; --card-bg: #1e293b; --primary: #3b82f6; 
             --success: #10b981; --text-main: #f8fafc; --text-dim: #94a3b8; 
             --border: #334155; --danger: #ef4444; --gold: #fbbf24; --wait: #f59e0b;
+            --highlight: #60a5fa; /* لون تمييز اسم اللاعب */
         }
 
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--bg); color: var(--text-main); padding: 15px; margin: 0; }
@@ -27,7 +28,7 @@
         .standings-table { width: 100%; border-collapse: collapse; text-align: center; }
         .standings-table th { color: var(--text-dim); font-size: 0.75rem; padding-bottom: 10px; }
         .standings-table td { padding: 12px 5px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .rank-1 { color: var(--gold); background: rgba(251, 191, 36, 0.05); }
+        .rank-1 { background: rgba(251, 191, 36, 0.05); }
 
         .top-scores-list { list-style: none; padding: 0; margin: 0; }
         .top-score-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 0.85rem; }
@@ -63,7 +64,8 @@
         .locked-round { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
         .approval-btns-container { display: flex; gap: 8px; margin-top: 10px; }
         
-        /* تنسيق رسالة الترحيب */
+        /* كلاس التمييز الجديد */
+        .highlight-me { color: var(--gold) !important; text-shadow: 0 0 5px rgba(251, 191, 36, 0.4); }
         #user-welcome { text-align: center; font-size: 0.85rem; color: var(--success); margin-bottom: 10px; font-weight: bold; min-height: 20px; }
     </style>
 </head>
@@ -119,13 +121,12 @@
     const ADMIN_KEY = "Algm";
     const PLAYER_KEYS = { "أحمد": "6175", "مشعل": "7275", "فيصل": "7379" };
 
-    // --- نظام استخراج هوية اللاعب من الرابط بشكل صحيح ---
     const urlParams = new URLSearchParams(window.location.search);
     const rawId = urlParams.get('id');
     const loggedInUser = rawId ? decodeURIComponent(rawId) : null;
 
     if (loggedInUser && PLAYER_KEYS[loggedInUser]) {
-        document.getElementById('user-welcome').innerText = `مرحباً ${loggedInUser}، يمكنك الاعتماد بضغطة زر ✅`;
+        document.getElementById('user-welcome').innerText = `مرحباً ${loggedInUser}، تم تمييز اسمك في القوائم ✅`;
     }
 
     db.ref('league').on('value', (snapshot) => {
@@ -160,7 +161,7 @@
                     <span>الجولة ${rIdx + 1} ${!isPreviousComplete ? '🔒' : ''}</span>
                     ${isRoundFinished ? `<button class="btn-toggle" onclick="toggleRound(${rIdx})">عرض النتائج</button>` : ''}
                 </div>
-                <div id="round-box-${rIdx}" class="${!isPreviousComplete ? 'locked-round' : ''}" style="${isRoundFinished ? 'display:none;' : 'display:block;'}">`;
+                <div id="round-box-${rIdx}" style="${isRoundFinished ? 'display:none;' : 'display:block;'}">`;
 
             round.forEach((m, mIdx) => {
                 const isP1Approved = m.approvals && m.approvals[m.p1];
@@ -183,16 +184,16 @@
                 }
 
                 roundHTML += `
-                <div class="match-card">
+                <div class="match-card ${!isPreviousComplete && !isRoundFinished ? 'locked-round' : ''}">
                     <div class="match-row">
-                        <span style="color:${isP1Approved?'#10b981':''}">${m.p1}</span>
-                        <div class="score-box"><input type="number" class="score-in" id="s1-${rIdx}-${mIdx}" value="${m.s1??''}" ${isFullConfirmed || !isPreviousComplete ?'disabled':''}></div>
+                        <span class="${m.p1 === loggedInUser ? 'highlight-me' : ''}" style="color:${isP1Approved?'#10b981':''}">${m.p1}</span>
+                        <div class="score-box"><input type="number" class="score-in" id="s1-${rIdx}-${mIdx}" value="${m.s1??''}" ${isFullConfirmed || (!isPreviousComplete && !isRoundFinished) ?'disabled':''}></div>
                         <span>-</span>
-                        <div class="score-box"><input type="number" class="score-in" id="s2-${rIdx}-${mIdx}" value="${m.s2??''}" ${isFullConfirmed || !isPreviousComplete ?'disabled':''}></div>
-                        <span style="color:${isP2Approved?'#10b981':''}">${m.p2}</span>
+                        <div class="score-box"><input type="number" class="score-in" id="s2-${rIdx}-${mIdx}" value="${m.s2??''}" ${isFullConfirmed || (!isPreviousComplete && !isRoundFinished) ?'disabled':''}></div>
+                        <span class="${m.p2 === loggedInUser ? 'highlight-me' : ''}" style="color:${isP2Approved?'#10b981':''}">${m.p2}</span>
                     </div>
                     ${!m.adminSet ? 
-                        `<button class="btn btn-admin" onclick="adminSetResult(${rIdx}, ${mIdx})" ${!isPreviousComplete?'disabled':''}>تسجيل النتيجة (الأدمن)</button>` : 
+                        `<button class="btn btn-admin" onclick="adminSetResult(${rIdx}, ${mIdx})" ${!isPreviousComplete && !isRoundFinished ?'disabled':''}>تسجيل النتيجة (الأدمن)</button>` : 
                         (!isFullConfirmed ? 
                             `<div class="approval-btns-container">
                                 ${!isP1Approved ? `<button class="btn btn-player" onclick="playerApprove(${rIdx}, ${mIdx}, '${m.p1}')">موافقة ${m.p1}</button>` : ''}
@@ -229,7 +230,11 @@
         topBody.innerHTML = sorted.length ? '' : '<li style="font-size:0.7rem; color:var(--text-dim)">لا توجد نتائج فوز معتمدة بعد</li>';
         sorted.forEach(m => {
             const countBadge = m.count > 1 ? `<span class="count-badge">x${m.count}</span>` : '';
-            topBody.innerHTML += `<li class="top-score-item"><span class="ts-players"><b>${m.winner}</b> <small>ضد</small> ${m.loser} ${countBadge}</span><span class="ts-result">${m.winS} - ${m.loseS}</span></li>`;
+            // تمييز الأسماء داخل القائمة
+            const wName = m.winner === loggedInUser ? `<b class="highlight-me">${m.winner}</b>` : `<b>${m.winner}</b>`;
+            const lName = m.loser === loggedInUser ? `<span class="highlight-me">${m.loser}</span>` : m.loser;
+            
+            topBody.innerHTML += `<li class="top-score-item"><span class="ts-players">${wName} <small>ضد</small> ${lName} ${countBadge}</span><span class="ts-result">${m.winS} - ${m.loseS}</span></li>`;
         });
     }
 
@@ -247,21 +252,15 @@
         else alert("❌ كلمة السر خاطئة!");
     }
 
-    // --- دالة الموافقة الذكية ---
     function playerApprove(rIdx, mIdx, playerName) {
-        // إذا كان الشخص هو صاحب الرابط، يوافق فوراً بدون كلمة سر
         if (loggedInUser === playerName) {
             db.ref(`league/${rIdx}/${mIdx}/approvals/${playerName}`).set(true);
             return;
         }
-
-        // إذا لم يكن صاحب الرابط، يطلب كلمة السر (كخيار يدوي احتياطي)
         const pass = prompt(`اللاعب ${playerName}: أدخل كلمة السر الخاصة بك للموافقة:`);
-        if (!pass) return;
-        
         if (pass === PLAYER_KEYS[playerName]) {
             db.ref(`league/${rIdx}/${mIdx}/approvals/${playerName}`).set(true);
-        } else {
+        } else if (pass) {
             alert(`❌ كلمة السر غير صحيحة`);
         }
     }
@@ -280,8 +279,9 @@
         const tbody = document.getElementById('standings-body');
         tbody.innerHTML = '';
         sorted.forEach((p, i) => {
+            const isMe = p.name === loggedInUser;
             tbody.innerHTML += `<tr class="${i===0?'rank-1':''}">
-                <td style="text-align:right;"><div style="display:flex; align-items:center;"><span>${p.name}</span>${getStarsHTML(p.stars)}</div><div class="streak-fire">${p.currentStreak > 0 ? '🔥 فوز: ' + p.currentStreak : ''}</div></td>
+                <td style="text-align:right;"><div style="display:flex; align-items:center;"><span class="${isMe?'highlight-me':''}">${p.name}</span>${getStarsHTML(p.stars)}</div><div class="streak-fire">${p.currentStreak > 0 ? '🔥 فوز: ' + p.currentStreak : ''}</div></td>
                 <td>${p.played}</td><td>${p.gf-p.ga}</td><td style="color:var(--primary)">${p.pts}</td>
             </tr>`;
         });
@@ -307,7 +307,9 @@
         const container = document.getElementById('h2h-container'); container.innerHTML = '';
         for (const key in h2h) {
             const [p1, p2] = key.split('_');
-            container.innerHTML += `<div class="h2h-row"><span>${p1}</span><div class="h2h-score">${h2h[key].p1} - ${h2h[key].p2}</div><span>${p2}</span></div>`;
+            const p1Class = p1 === loggedInUser ? 'highlight-me' : '';
+            const p2Class = p2 === loggedInUser ? 'highlight-me' : '';
+            container.innerHTML += `<div class="h2h-row"><span class="${p1Class}">${p1}</span><div class="h2h-score">${h2h[key].p1} - ${h2h[key].p2}</div><span class="${p2Class}">${p2}</span></div>`;
         }
     }
 
