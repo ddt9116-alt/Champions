@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دوري الأساطير - النسخة الكاملة</title>
+    <title>دوري الأساطير - النسخة المعتمدة</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
@@ -32,8 +32,8 @@
         .top-scores-list { list-style: none; padding: 0; margin: 0; }
         .top-score-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--border); font-size: 0.85rem; }
         .ts-players { color: var(--text-main); }
-        .ts-result { color: var(--gold); font-weight: bold; font-size: 1rem; }
-        .ts-repeat-badge { background: var(--border); color: var(--text-dim); padding: 2px 6px; border-radius: 6px; font-size: 0.7rem; margin-right: 5px; }
+        .ts-result { color: var(--gold); font-weight: bold; font-size: 1rem; min-width: 50px; text-align: left; }
+        .ts-repeat-badge { background: rgba(59, 130, 246, 0.2); color: var(--primary); padding: 2px 6px; border-radius: 6px; font-size: 0.65rem; margin-right: 8px; border: 1px solid rgba(59, 130, 246, 0.3); }
 
         .stars-container { display: inline-flex; gap: 8px; vertical-align: middle; margin-right: 10px; }
         .star-badge { position: relative; display: flex; align-items: center; font-size: 1.1rem; }
@@ -197,26 +197,24 @@
     function updateTopScoresUI(matches) {
         const topBody = document.getElementById('top-scores-body');
         
-        // تجميع النتائج بناءً على الطرفين والسكور
         const groups = {};
         matches.filter(m => m.s1 !== m.s2).forEach(m => {
-            // توحيد شكل الطرفين (أحمد ضد مشعل هي نفسها مشعل ضد أحمد)
-            const sortedPlayers = [m.p1, m.p2].sort();
-            const playersKey = sortedPlayers.join(' ضد ');
+            // نحدد الفائز والخاسر بوضوح
+            const winner = m.s1 > m.s2 ? m.p1 : m.p2;
+            const loser = m.s1 > m.s2 ? m.p2 : m.p1;
+            const winScore = Math.max(m.s1, m.s2);
+            const loseScore = Math.min(m.s1, m.s2);
             
-            // توحيد شكل السكور (الأكبر دائماً أولاً)
-            const sortedScores = [m.s1, m.s2].sort((a,b) => b-a);
-            const scoreKey = `${sortedScores[0]} - ${sortedScores[1]}`;
-            
-            // المفتاح الفريد هو (المواجهة + النتيجة)
-            const uniqueKey = `${playersKey} | ${scoreKey}`;
+            // المفتاح الآن يعتمد على (الفائز + الخاسر + النتيجة)
+            // هذا يمنع دمج فوز أحمد 9-0 مع فوز فيصل 9-0
+            const uniqueKey = `${winner} ضد ${loser} | ${winScore}-${loseScore}`;
             
             if (!groups[uniqueKey]) {
                 groups[uniqueKey] = {
-                    players: playersKey,
-                    score: scoreKey,
-                    diff: sortedScores[0] - sortedScores[1],
-                    sum: sortedScores[0] + sortedScores[1],
+                    displayTitle: `${winner} ضد ${loser}`,
+                    displayScore: `${winScore} - ${loseScore}`,
+                    diff: winScore - loseScore,
+                    sum: winScore + loseScore,
                     count: 1
                 };
             } else {
@@ -224,7 +222,6 @@
             }
         });
 
-        // ترتيب المجموعات (حسب الفارق الأكبر ثم المجموع)
         const sorted = Object.values(groups)
             .sort((a, b) => b.diff - a.diff || b.sum - a.sum)
             .slice(0, 5);
@@ -234,10 +231,10 @@
         sorted.forEach(item => {
             topBody.innerHTML += `<li class="top-score-item">
                 <div class="ts-players">
-                    ${item.players}
+                    ${item.displayTitle}
                     ${item.count > 1 ? `<span class="ts-repeat-badge">تكررت ${item.count} مرات</span>` : ''}
                 </div>
-                <span class="ts-result">${item.score}</span>
+                <span class="ts-result">${item.displayScore}</span>
             </li>`;
         });
     }
