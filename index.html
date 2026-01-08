@@ -27,15 +27,12 @@
         .standings-table { width: 100%; border-collapse: collapse; text-align: center; }
         .standings-table th { color: var(--text-dim); font-size: 0.75rem; padding-bottom: 10px; }
         
-        /* توحيد الأرقام للون الأبيض في الجدول */
         .standings-table td { padding: 12px 5px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.05); color: #ffffff !important; }
         
         .rank-1 { background: rgba(251, 191, 36, 0.05); }
 
-        /* توحيد الأرقام للون الأبيض في أكبر 5 نتائج */
         .ts-result { color: #ffffff !important; font-weight: bold; }
         
-        /* توحيد الأرقام للون الأبيض في المواجهات المباشرة */
         .h2h-score { background: #0f172a; padding: 4px 12px; border-radius: 20px; color: #ffffff !important; font-weight: 800; border: 1px solid var(--border); min-width: 45px; text-align: center; }
 
         .top-scores-list { list-style: none; padding: 0; margin: 0; }
@@ -69,7 +66,6 @@
         .locked-round { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
         .approval-btns-container { display: flex; gap: 8px; margin-top: 10px; }
         
-        /* تمييز اسم اللاعب باللون الأحمر */
         .highlight-me { 
             color: #ef4444 !important; 
             text-shadow: 0 0 10px rgba(239, 68, 68, 0.4); 
@@ -116,7 +112,6 @@
 </div>
 
 <script>
-    // إعداداتك الأصلية
     const firebaseConfig = {
         apiKey: "AIzaSyA_s2HoKKxwXELNHEmti_RsvA_nP6fmWP8",
         authDomain: "nhffbjhh.firebaseapp.com",
@@ -228,12 +223,26 @@
 
     function updateStandingsUI(stats) {
         const sorted = Object.keys(stats).map(name => ({ name, ...stats[name] })).sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga));
+        
+        // تحديد أعلى عدد أهداف تم تسجيله
+        const maxGoals = Math.max(...sorted.map(p => p.gf));
+
         const tbody = document.getElementById('standings-body');
         tbody.innerHTML = '';
         sorted.forEach((p, i) => {
             const isMe = p.name === loggedInUser;
+            // شرط ظهور الكورة: أن يكون أهدافه هي الأعلى وأكبر من صفر
+            const isTopScorer = p.gf === maxGoals && maxGoals > 0;
+
             tbody.innerHTML += `<tr class="${i===0?'rank-1':''}">
-                <td style="text-align:right;"><div style="display:flex; align-items:center;"><span class="${isMe?'highlight-me':''}">${p.name}</span>${getStarsHTML(p.stars)}</div><div class="streak-fire">${p.currentStreak > 0 ? '🔥 فوز: ' + p.currentStreak : ''}</div></td>
+                <td style="text-align:right;">
+                    <div style="display:flex; align-items:center;">
+                        <span class="${isMe?'highlight-me':''}">${p.name}</span>
+                        ${isTopScorer ? '<span style="margin-right:5px;" title="الهداف">⚽</span>' : ''}
+                        ${getStarsHTML(p.stars)}
+                    </div>
+                    <div class="streak-fire">${p.currentStreak > 0 ? '🔥 فوز: ' + p.currentStreak : ''}</div>
+                </td>
                 <td>${p.played}</td><td>${p.gf-p.ga}</td><td>${p.pts}</td>
             </tr>`;
         });
@@ -271,7 +280,6 @@
         }
     }
 
-    // وظائف الأدمن والتحقق
     function adminSetResult(rIdx, mIdx) {
         const s1 = parseInt(document.getElementById(`s1-${rIdx}-${mIdx}`).value);
         const s2 = parseInt(document.getElementById(`s2-${rIdx}-${mIdx}`).value);
