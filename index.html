@@ -30,9 +30,10 @@
         .rank-1 { color: var(--gold); background: rgba(251, 191, 36, 0.05); }
 
         .top-scores-list { list-style: none; padding: 0; margin: 0; }
-        .top-score-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 0.85rem; }
+        .top-score-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--border); font-size: 0.85rem; }
         .ts-players { color: var(--text-main); }
-        .ts-result { color: var(--gold); font-weight: bold; }
+        .ts-result { color: var(--gold); font-weight: bold; font-size: 1rem; }
+        .ts-repeat-badge { background: var(--border); color: var(--text-dim); padding: 2px 6px; border-radius: 6px; font-size: 0.7rem; margin-right: 5px; }
 
         .stars-container { display: inline-flex; gap: 8px; vertical-align: middle; margin-right: 10px; }
         .star-badge { position: relative; display: flex; align-items: center; font-size: 1.1rem; }
@@ -195,17 +196,48 @@
 
     function updateTopScoresUI(matches) {
         const topBody = document.getElementById('top-scores-body');
-        // تم التعديل هنا: استثناء التعادلات (m.s1 !== m.s2)
-        const sorted = matches
-            .filter(m => m.s1 !== m.s2)
-            .sort((a, b) => (Math.abs(b.s1 - b.s2)) - (Math.abs(a.s1 - a.s2)) || (b.s1 + b.s2) - (a.s1 + a.s2))
+        
+        // تجميع النتائج بناءً على الطرفين والسكور
+        const groups = {};
+        matches.filter(m => m.s1 !== m.s2).forEach(m => {
+            // توحيد شكل الطرفين (أحمد ضد مشعل هي نفسها مشعل ضد أحمد)
+            const sortedPlayers = [m.p1, m.p2].sort();
+            const playersKey = sortedPlayers.join(' ضد ');
+            
+            // توحيد شكل السكور (الأكبر دائماً أولاً)
+            const sortedScores = [m.s1, m.s2].sort((a,b) => b-a);
+            const scoreKey = `${sortedScores[0]} - ${sortedScores[1]}`;
+            
+            // المفتاح الفريد هو (المواجهة + النتيجة)
+            const uniqueKey = `${playersKey} | ${scoreKey}`;
+            
+            if (!groups[uniqueKey]) {
+                groups[uniqueKey] = {
+                    players: playersKey,
+                    score: scoreKey,
+                    diff: sortedScores[0] - sortedScores[1],
+                    sum: sortedScores[0] + sortedScores[1],
+                    count: 1
+                };
+            } else {
+                groups[uniqueKey].count++;
+            }
+        });
+
+        // ترتيب المجموعات (حسب الفارق الأكبر ثم المجموع)
+        const sorted = Object.values(groups)
+            .sort((a, b) => b.diff - a.diff || b.sum - a.sum)
             .slice(0, 5);
 
         topBody.innerHTML = sorted.length ? '' : '<li style="font-size:0.7rem; color:var(--text-dim)">لا توجد نتائج فوز معتمدة بعد</li>';
-        sorted.forEach(m => {
+        
+        sorted.forEach(item => {
             topBody.innerHTML += `<li class="top-score-item">
-                <span class="ts-players">${m.p1} ضد ${m.p2}</span>
-                <span class="ts-result">${m.s1} - ${m.s2}</span>
+                <div class="ts-players">
+                    ${item.players}
+                    ${item.count > 1 ? `<span class="ts-repeat-badge">تكررت ${item.count} مرات</span>` : ''}
+                </div>
+                <span class="ts-result">${item.score}</span>
             </li>`;
         });
     }
